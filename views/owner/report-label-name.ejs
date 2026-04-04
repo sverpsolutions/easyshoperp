@@ -1,0 +1,77 @@
+<%- include('../partials/header') %>
+<% function fmtQty(n){ return Number(n||0).toLocaleString(); } %>
+
+<div class="container-fluid p-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="fw-bold mb-0" style="color:#1a1a2e;">
+      <i class="bi bi-layers-fill me-2" style="color:#6f42c1;"></i>LABEL BREAKDOWN REPORT
+    </h5>
+    <a href="/owner/reports" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Back</a>
+  </div>
+
+  <form class="chart-card mb-3" method="GET">
+    <div class="row g-2 align-items-end">
+      <div class="col-md-3"><label class="form-label fw-bold small">FROM</label><input type="date" name="from" value="<%= from %>" class="form-control"></div>
+      <div class="col-md-3"><label class="form-label fw-bold small">TO</label><input type="date" name="to" value="<%= to %>" class="form-control"></div>
+      <div class="col-md-2"><button type="submit" class="btn btn-primary w-100"><i class="bi bi-search me-1"></i>Filter</button></div>
+      <div class="col-md-2"><button type="button" class="btn btn-outline-success w-100" onclick="exportCSV()"><i class="bi bi-file-earmark-excel me-1"></i>Export</button></div>
+    </div>
+  </form>
+
+  <div class="chart-card p-0">
+    <div class="table-responsive">
+      <table class="table table-hover table-sm mb-0 align-middle" id="tbl">
+        <thead style="background:#f8f9fa;position:sticky;top:0;">
+          <tr style="font-size:0.7rem;text-transform:uppercase;color:#6c757d;">
+            <th class="ps-3">#</th>
+            <th>Label Name</th>
+            <th>Size</th>
+            <th>Paper</th>
+            <th>Gap</th>
+            <th class="text-center">Jobs</th>
+            <th class="text-center">Customers</th>
+            <th class="text-end">Required</th>
+            <th class="text-end pe-3">Produced</th>
+          </tr>
+        </thead>
+        <tbody style="font-size:0.82rem;">
+          <% rows.forEach((r,i) => {
+             const pct = r.Total_Required>0 ? Math.round(r.Total_Produced*100/r.Total_Required):0; %>
+          <tr>
+            <td class="ps-3 text-muted small"><%= i+1 %></td>
+            <td><strong style="color:#1a1a2e;"><%= r.Label_Name %></strong></td>
+            <td><span class="badge bg-light text-dark border"><%= r.Size||'—' %></span></td>
+            <td class="text-muted small"><%= r.Paper||'—' %></td>
+            <td><span class="badge <%= r.Gap_Type==='No Gap'?'bg-warning text-dark':'bg-light text-dark border' %>" style="font-size:0.65rem;"><%= r.Gap_Type||'—' %></span></td>
+            <td class="text-center"><%= r.Total_Jobs %></td>
+            <td class="text-center text-info"><%= r.Unique_Customers %></td>
+            <td class="text-end"><%= fmtQty(r.Total_Required) %></td>
+            <td class="text-end pe-3">
+              <span class="fw-bold text-success"><%= fmtQty(r.Total_Produced) %></span>
+              <div class="progress mt-1" style="height:3px;"><div class="progress-bar bg-success" style="width:<%= pct %>%"></div></div>
+              <span style="font-size:0.6rem;color:#aaa;"><%= pct %>%</span>
+            </td>
+          </tr>
+          <% }) %>
+          <% if(!rows.length) { %><tr><td colspan="9" class="text-center py-5 text-muted">No data for selected period</td></tr><% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+function exportCSV() {
+  const rows = document.querySelectorAll('#tbl tbody tr');
+  let csv = 'Label Name,Size,Paper,Gap,Jobs,Customers,Required,Produced\n';
+  rows.forEach(row => {
+    const cells = row.querySelectorAll('td');
+    if (cells.length >= 9) csv += [1,2,3,4,5,6,7,8].map(i=>`"${cells[i].textContent.trim()}"`).join(',') + '\n';
+  });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download = `label_breakdown_<%= from %>_<%= to %>.csv`;
+  a.click();
+}
+</script>
+<%- include('../partials/footer') %>

@@ -1,0 +1,88 @@
+<%- include('_head') %>
+
+<div class="topbar">
+  <a href="/portal/dashboard" class="topbar-icon" style="text-decoration:none;"><i class="bi bi-arrow-left"></i></a>
+  <div class="topbar-title">My Orders</div>
+  <a href="/portal/order/new" class="topbar-icon" style="text-decoration:none;color:white;"><i class="bi bi-plus-lg"></i></a>
+</div>
+
+<div class="page-pad">
+
+  <% if(success){ %>
+  <div style="background:#dcfce7;border:1.5px solid #86efac;border-radius:14px;padding:14px 16px;color:#15803d;font-size:0.88rem;display:flex;gap:10px;align-items:center;margin-bottom:16px;">
+    <i class="bi bi-check-circle-fill" style="font-size:1.3rem;"></i>
+    <div><strong>Order Submitted!</strong><br><span style="font-size:0.8rem;">We'll review and confirm within 24 hours.</span></div>
+  </div>
+  <% } %>
+
+  <% if(!orders.length){ %>
+  <div class="empty">
+    <i class="bi bi-bag-x"></i>
+    <div style="font-weight:600;font-size:1rem;color:#475569;">No orders yet</div>
+    <div style="font-size:0.82rem;margin-top:6px;">Tap the + button to place your first order</div>
+  </div>
+  <% } %>
+
+  <% const statusClass = {Pending:'bs-pending',Reviewing:'bs-reviewing',Approved:'bs-approved',Rejected:'bs-rejected','In Production':'bs-production',Completed:'bs-completed',Dispatched:'bs-dispatched'}; %>
+
+  <% orders.forEach(o=>{ %>
+  <div class="card-m">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+      <div>
+        <div style="font-weight:700;font-size:0.95rem;color:#0f172a;"><%= o.Label_Name || 'Label Order' %></div>
+        <div style="font-size:0.75rem;color:#94a3b8;margin-top:2px;">#<%= o.Request_ID %> • <%= new Date(o.Request_Date).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}) %></div>
+      </div>
+      <span class="badge-status <%= statusClass[o.Status]||'bs-pending' %>"><%= o.Status %></span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
+      <div style="background:#f8fafc;border-radius:10px;padding:8px;text-align:center;">
+        <div style="font-size:0.65rem;color:#94a3b8;font-weight:600;">QTY</div>
+        <div style="font-weight:700;font-size:0.95rem;color:#0f172a;"><%= o.Quantity.toLocaleString('en-IN') %></div>
+      </div>
+      <div style="background:#f8fafc;border-radius:10px;padding:8px;text-align:center;">
+        <div style="font-size:0.65rem;color:#94a3b8;font-weight:600;">TYPE</div>
+        <div style="font-weight:700;font-size:0.85rem;color:#0f172a;"><%= o.Label_Type||'—' %></div>
+      </div>
+      <div style="background:#f8fafc;border-radius:10px;padding:8px;text-align:center;">
+        <div style="font-size:0.65rem;color:#94a3b8;font-weight:600;">BY</div>
+        <div style="font-weight:700;font-size:0.8rem;color:#0f172a;"><%= o.Required_By ? new Date(o.Required_By).toLocaleDateString('en-IN',{day:'numeric',month:'short'}) : '—' %></div>
+      </div>
+    </div>
+
+    <% if(o.Job_Number){ %>
+    <div style="background:#eff6ff;border-radius:10px;padding:8px 12px;display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+      <i class="bi bi-gear-fill" style="color:#3b82f6;font-size:0.9rem;"></i>
+      <span style="font-size:0.8rem;color:#2563eb;font-weight:600;">Job: <%= o.Job_Number %></span>
+      <% if(o.Job_Status){ %><span class="badge-status bs-<%= o.Job_Status.toLowerCase() %>" style="font-size:0.65rem;margin-left:auto;"><%= o.Job_Status %></span><% } %>
+    </div>
+    <% } %>
+
+    <% if(o.Owner_Notes){ %>
+    <div style="background:#fefce8;border-radius:10px;padding:8px 12px;display:flex;gap-8px;align-items:flex-start;">
+      <i class="bi bi-chat-left-fill" style="color:#d97706;margin-right:8px;font-size:0.85rem;margin-top:1px;"></i>
+      <span style="font-size:0.8rem;color:#92400e;"><strong>Vendor note:</strong> <%= o.Owner_Notes %></span>
+    </div>
+    <% } %>
+
+    <% if(o.Status==='Rejected'){ %>
+    <div style="margin-top:10px;">
+      <a href="/portal/order/new" style="display:block;text-align:center;background:#fee2e2;color:#dc2626;border-radius:10px;padding:9px;font-size:0.82rem;font-weight:600;text-decoration:none;">
+        <i class="bi bi-arrow-clockwise me-1"></i>Place Again
+      </a>
+    </div>
+    <% } %>
+  </div>
+  <% }) %>
+</div>
+
+<button class="fab" onclick="location.href='/portal/order/new'"><i class="bi bi-plus-lg"></i></button>
+
+<nav class="bottomnav">
+  <a href="/portal/dashboard" class="nav-item"><i class="bi bi-house-fill"></i>Home</a>
+  <a href="/portal/orders"    class="nav-item active"><i class="bi bi-bag"></i>Orders</a>
+  <a href="/portal/jobs"      class="nav-item"><i class="bi bi-gear"></i>Jobs</a>
+  <a href="/portal/bills"     class="nav-item"><i class="bi bi-receipt"></i>Bills</a>
+  <a href="/portal/profile"   class="nav-item"><i class="bi bi-person"></i>Profile</a>
+</nav>
+</body></html>

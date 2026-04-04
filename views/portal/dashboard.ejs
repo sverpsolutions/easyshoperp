@@ -1,0 +1,102 @@
+<%- include('_head') %>
+
+<!-- Top Bar -->
+<div class="topbar">
+  <a href="/portal/profile" class="topbar-icon" style="text-decoration:none;">
+    <div style="width:34px;height:34px;background:linear-gradient(135deg,#f59e0b,#ef4444);border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;color:white;">
+      <%= session.customer.name.charAt(0).toUpperCase() %>
+    </div>
+  </a>
+  <div class="topbar-title">My Dashboard</div>
+  <a href="/portal/logout" class="topbar-icon" style="text-decoration:none;"><i class="bi bi-box-arrow-right"></i></a>
+</div>
+
+<div class="page-pad">
+  <!-- Welcome -->
+  <div style="margin-bottom:18px;">
+    <div style="font-size:1.1rem;font-weight:700;color:#0f172a;">Hello, <%= customer.Customer_Name.split(' ')[0] %> 👋</div>
+    <div style="font-size:0.82rem;color:#64748b;"><%= customer.City ? customer.City + ' • ' : '' %>Customer since <%= new Date(customer.Created_Date).toLocaleDateString('en-IN',{month:'short',year:'numeric'}) %></div>
+  </div>
+
+  <!-- Stat Cards -->
+  <div class="stats-grid">
+    <div class="stat-box" onclick="location.href='/portal/orders'">
+      <div class="val" style="color:#f59e0b;"><%= stats.pendingOrders %></div>
+      <div class="lbl"><i class="bi bi-clock me-1"></i>Pending Orders</div>
+    </div>
+    <div class="stat-box" onclick="location.href='/portal/jobs'">
+      <div class="val" style="color:#3b82f6;"><%= stats.activeJobs %></div>
+      <div class="lbl"><i class="bi bi-gear me-1"></i>Active Jobs</div>
+    </div>
+    <div class="stat-box" onclick="location.href='/portal/bills'">
+      <div class="val" style="color:#ef4444;"><%= stats.unpaidBills %></div>
+      <div class="lbl"><i class="bi bi-receipt me-1"></i>Unpaid Bills</div>
+    </div>
+    <div class="stat-box">
+      <div class="val" style="color:<%= stats.balance > 0 ? '#ef4444' : '#22c55e' %>;">
+        ₹<%= Math.abs(stats.balance || 0).toLocaleString('en-IN') %>
+      </div>
+      <div class="lbl"><%= stats.balance > 0 ? '⬆ Balance Due' : '✅ Clear' %></div>
+    </div>
+  </div>
+
+  <!-- Recent Orders -->
+  <div class="section-title"><i class="bi bi-bag me-1"></i>Recent Orders</div>
+  <% if(recentOrders.length){ %>
+    <% recentOrders.forEach(o=>{ %>
+    <div class="card-m" onclick="location.href='/portal/orders'" style="cursor:pointer;">
+      <div class="d-flex justify-content-between align-items-start" style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <div style="font-weight:700;font-size:0.95rem;"><%= o.Label_Name || 'Label Order' %></div>
+          <div style="color:#64748b;font-size:0.8rem;margin-top:2px;">
+            Qty: <strong><%= o.Quantity.toLocaleString() %></strong>
+            <% if(o.Required_By){ %> • By: <%= new Date(o.Required_By).toLocaleDateString('en-IN') %><% } %>
+          </div>
+          <% if(o.Owner_Notes){ %><div style="color:#64748b;font-size:0.75rem;margin-top:4px;"><i class="bi bi-chat-left me-1"></i><%= o.Owner_Notes %></div><% } %>
+        </div>
+        <span class="badge-status bs-<%= o.Status.toLowerCase().replace(' ','-') %>"><%= o.Status %></span>
+      </div>
+    </div>
+    <% }) %>
+  <% } else { %>
+    <div class="card-m" style="text-align:center;color:#94a3b8;padding:24px;">
+      <i class="bi bi-bag-x" style="font-size:2rem;display:block;margin-bottom:8px;"></i>
+      No orders yet. Tap + to place your first order!
+    </div>
+  <% } %>
+
+  <!-- Recent Jobs -->
+  <% if(recentJobs.length){ %>
+  <div class="section-title" style="margin-top:6px;"><i class="bi bi-gear me-1"></i>In Production</div>
+  <% recentJobs.filter(j=>['Running','Assigned','Pending'].includes(j.Status)).forEach(j=>{ %>
+  <div class="card-m">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <div>
+        <div style="font-weight:700;font-size:0.9rem;"><%= j.Job_Number %></div>
+        <div style="color:#64748b;font-size:0.78rem;"><%= j.Label || 'Label' %> • <%= j.Required_Qty.toLocaleString() %> pcs</div>
+      </div>
+      <span class="badge-status bs-<%= j.Status.toLowerCase() %>"><%= j.Status %></span>
+    </div>
+    <div class="prog-bar">
+      <div class="prog-fill" style="width:<%= Math.min(100,j.Progress||0) %>%"></div>
+    </div>
+    <div style="font-size:0.72rem;color:#64748b;margin-top:4px;text-align:right;"><%= j.Produced_Qty||0 %> / <%= j.Required_Qty %> pcs (<%= j.Progress||0 %>%)</div>
+  </div>
+  <% }) %>
+  <% } %>
+</div>
+
+<!-- FAB: New Order -->
+<button class="fab" onclick="location.href='/portal/order/new'" title="Place New Order">
+  <i class="bi bi-plus-lg"></i>
+</button>
+
+<!-- Bottom Nav -->
+<nav class="bottomnav">
+  <a href="/portal/dashboard" class="nav-item active"><i class="bi bi-house-fill"></i>Home</a>
+  <a href="/portal/orders"    class="nav-item"><i class="bi bi-bag"></i>Orders</a>
+  <a href="/portal/jobs"      class="nav-item"><i class="bi bi-gear"></i>Jobs</a>
+  <a href="/portal/bills"     class="nav-item"><i class="bi bi-receipt"></i>Bills</a>
+  <a href="/portal/profile"   class="nav-item"><i class="bi bi-person"></i>Profile</a>
+</nav>
+</body></html>

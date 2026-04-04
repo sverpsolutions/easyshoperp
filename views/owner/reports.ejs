@@ -1,0 +1,71 @@
+<%- include('../partials/header') %>
+
+<div class="container-fluid p-3">
+  <h5 class="fw-bold mb-4" style="color:#1a1a2e;">
+    <i class="bi bi-bar-chart-fill me-2" style="color:#1a73e8;"></i>REPORTS & ANALYTICS
+  </h5>
+
+  <div class="row g-3">
+    <% const cards = [
+      { href:'/owner/reports/impressions',  icon:'bi-speedometer',     color:'#f59e0b', title:'Hourly Impressions',     desc:'Flat belt / rotary impressions per hour' },
+      { href:'/owner/reports/daily',          icon:'bi-calendar-check',  color:'#28a745', title:'Daily Production',       desc:'Production log by date range' },
+      { href:'/owner/reports/label-type',     icon:'bi-tag-fill',        color:'#1a73e8', title:'Label Type Summary',     desc:'Plain vs Printed qty & jobs' },
+      { href:'/owner/reports/label-name',     icon:'bi-layers-fill',     color:'#6f42c1', title:'Label Breakdown',         desc:'Each label size/paper/gap detail' },
+      { href:'/owner/reports/operator-label', icon:'bi-person-badge',    color:'#fd7e14', title:'Operator × Label Type',   desc:'Which operator makes what labels' },
+      { href:'/owner/reports/customer',       icon:'bi-building',        color:'#0dcaf0', title:'Customer History',        desc:'All jobs for a specific customer' },
+      { href:'/owner/reports/overdue',        icon:'bi-alarm-fill',      color:'#dc3545', title:'Overdue Jobs',            desc:'Jobs past delivery date' },
+      { href:'/owner/reports/completion',     icon:'bi-graph-up-arrow',  color:'#198754', title:'Completion Rate',         desc:'Monthly trends & operator stats' },
+      { href:'/owner/reports/operator',       icon:'bi-people-fill',     color:'#20c997', title:'Operator Productivity',   desc:'Output & hours ranking' },
+      { href:'/owner/reports/machine',        icon:'bi-cpu-fill',        color:'#f59e0b', title:'Machine Utilization',     desc:'Efficiency & downtime analysis' },
+    ]; %>
+    <% cards.forEach(card => { %>
+    <div class="col-6 col-md-4 col-xl-3">
+      <a href="<%= card.href %>" class="text-decoration-none">
+        <div class="chart-card h-100 d-flex flex-column" style="border-top:4px solid <%= card.color %>; transition:transform 0.15s, box-shadow 0.15s;"
+             onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 25px rgba(0,0,0,0.15)'"
+             onmouseout="this.style.transform='';this.style.boxShadow=''">
+          <div class="d-flex align-items-center gap-3 mb-2">
+            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                 style="width:48px;height:48px;background:<%= card.color %>20;">
+              <i class="bi <%= card.icon %> fs-4" style="color:<%= card.color %>;"></i>
+            </div>
+            <div>
+              <div class="fw-bold" style="color:#1a1a2e; font-size:0.9rem;"><%= card.title %></div>
+              <div class="text-muted small"><%= card.desc %></div>
+            </div>
+          </div>
+        </div>
+      </a>
+    </div>
+    <% }) %>
+  </div>
+
+  <!-- Quick 7-day chart -->
+  <div class="chart-card mt-4">
+    <h6 class="fw-bold mb-3" style="color:#1a1a2e;">
+      <i class="bi bi-graph-up me-2 text-success"></i>Production — Last 7 Days
+    </h6>
+    <canvas id="weekChart" height="80"></canvas>
+  </div>
+</div>
+
+<script>
+fetch('/api/production/chart').then(r=>r.json()).then(data => {
+  new Chart(document.getElementById('weekChart').getContext('2d'), {
+    type:'bar',
+    data: {
+      labels: data.map(d => d.Date ? String(d.Date).substr(5,5) : ''),
+      datasets:[{ label:'Units Produced', data:data.map(d=>d.Total),
+        backgroundColor:'rgba(26,115,232,0.7)', borderColor:'#1a73e8', borderWidth:1, borderRadius:4 }]
+    },
+    options: {
+      plugins:{ legend:{labels:{color:'#495057'}} },
+      scales: {
+        x:{ ticks:{color:'#6c757d'}, grid:{color:'#f0f0f0'} },
+        y:{ ticks:{color:'#6c757d'}, grid:{color:'#f0f0f0'}, beginAtZero:true }
+      }
+    }
+  });
+});
+</script>
+<%- include('../partials/footer') %>

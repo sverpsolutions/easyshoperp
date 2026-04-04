@@ -1,0 +1,75 @@
+<%- include('../partials/header') %>
+<% function fmtQty(n){ return Number(n||0).toLocaleString(); }
+   function fmtDate(d){ return d ? new Date(d).toLocaleDateString('en-IN') : '—'; } %>
+
+<div class="container-fluid p-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="fw-bold mb-0" style="color:#1a1a2e;">
+      <i class="bi bi-alarm-fill me-2" style="color:#dc3545;"></i>OVERDUE JOBS
+    </h5>
+    <a href="/owner/reports" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Back</a>
+  </div>
+
+  <% if (rows.length === 0) { %>
+  <div class="chart-card text-center py-5">
+    <i class="bi bi-check-circle-fill fs-1 text-success d-block mb-2"></i>
+    <h5 class="text-success fw-bold">No Overdue Jobs!</h5>
+    <p class="text-muted">All jobs are on schedule. 🎉</p>
+  </div>
+  <% } else { %>
+  <div class="alert alert-danger">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+    <strong><%= rows.length %> job<%= rows.length>1?'s':'' %></strong> past delivery date and not yet completed!
+  </div>
+
+  <div class="chart-card p-0">
+    <div class="table-responsive">
+      <table class="table table-hover table-sm mb-0 align-middle">
+        <thead style="background:#f8f9fa; position:sticky; top:0;">
+          <tr style="font-size:0.7rem;text-transform:uppercase;color:#6c757d;">
+            <th class="ps-3">Job No</th>
+            <th>Customer</th>
+            <th>Size</th>
+            <th>Type</th>
+            <th>Delivery Date</th>
+            <th class="text-center text-danger fw-bold">Days Overdue</th>
+            <th class="text-end">Required</th>
+            <th class="text-end">Produced</th>
+            <th class="text-center">Progress</th>
+            <th>Status</th>
+            <th class="pe-3">Operator</th>
+          </tr>
+        </thead>
+        <tbody style="font-size:0.8rem;">
+          <% rows.forEach(r => { %>
+          <tr style="<%= r.Days_Overdue>7?'background:#fff5f5':r.Days_Overdue>3?'background:#fff8f0':'' %>">
+            <td class="ps-3"><strong class="text-primary"><%= r.Job_Number %></strong></td>
+            <td class="fw-bold"><%= r.Customer_Name %></td>
+            <td><span class="badge bg-light text-dark border"><%= r.Size||'—' %></span></td>
+            <td><span class="badge <%= r.Label_Type==='Printed'?'bg-primary':'bg-secondary' %>"><%= r.Label_Type %></span></td>
+            <td class="text-danger fw-bold"><%= fmtDate(r.Delivery_Date) %></td>
+            <td class="text-center">
+              <span class="badge <%= r.Days_Overdue>7?'bg-danger':r.Days_Overdue>3?'bg-warning text-dark':'bg-warning text-dark' %> fs-6">
+                <%= r.Days_Overdue %> days
+              </span>
+            </td>
+            <td class="text-end"><%= fmtQty(r.Required_Qty) %></td>
+            <td class="text-end text-success fw-bold"><%= fmtQty(r.Produced_Qty) %></td>
+            <td class="text-center">
+              <div class="progress" style="height:8px;width:70px;margin:0 auto;">
+                <div class="progress-bar <%= r.Pct_Done>=75?'bg-success':r.Pct_Done>=50?'bg-warning':'bg-danger' %>"
+                     style="width:<%= r.Pct_Done %>%"></div>
+              </div>
+              <span style="font-size:0.65rem;color:#888;"><%= r.Pct_Done %>%</span>
+            </td>
+            <td><span class="badge bg-<%= r.Status==='Running'?'success':r.Status==='Paused'?'warning text-dark':'secondary' %>"><%= r.Status %></span></td>
+            <td class="text-muted small pe-3"><%= r.Operator_Name %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <% } %>
+</div>
+<%- include('../partials/footer') %>

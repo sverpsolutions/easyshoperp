@@ -1,0 +1,47 @@
+<div class="col-6 col-md-4 col-lg-3 col-xl-2">
+  <div class="machine-card status-<%= m.Status.toLowerCase() %>"
+       id="mcard-<%= m.Machine_ID %>"
+       data-machine="<%= m.Machine_ID %>"
+       onclick="showMachineDetail(<%= m.Machine_ID %>)"
+       style="cursor:pointer;">
+    <div class="machine-header">
+      <span class="machine-name"><%= m.Machine_Name %></span>
+      <span class="machine-type-badge <%= m.Machine_Type==='Auto'?'badge-auto':'badge-manual' %>">
+        <%= m.Machine_Type %>
+      </span>
+    </div>
+    <div class="machine-status-indicator status-<%= m.Status.toLowerCase() %>">
+      <% if(m.Status==='Running'){ %><i class="bi bi-play-fill"></i> RUNNING
+      <% } else if(m.Status==='Idle'){ %><i class="bi bi-pause-fill"></i> IDLE
+      <% } else if(m.Status==='Stopped'){ %><i class="bi bi-stop-fill"></i> STOPPED
+      <% } else { %><i class="bi bi-wrench"></i> MAINT.<% } %>
+    </div>
+    <div class="machine-info">
+      <div class="info-row">
+        <i class="bi bi-person-fill" style="color:#1a73e8;"></i>
+        <span><%= m.Operator_Name||'—' %></span>
+      </div>
+      <div class="info-row">
+        <i class="bi bi-tag-fill text-primary"></i>
+        <span><%= m.Job_Number||'No Job' %></span>
+      </div>
+      <% if((m.Job_Progress||0)>0){ %>
+      <div class="progress-mini mt-1">
+        <div class="progress-bar-mini" style="width:<%= m.Job_Progress %>%"></div>
+      </div>
+      <div class="text-center" style="font-size:0.65rem;color:#888;"><%= m.Job_Progress %>%</div>
+      <% } %>
+      <% if((m.Run_Minutes||0)>0){ %>
+      <div class="info-row mt-1">
+        <i class="bi bi-clock text-success"></i>
+        <span class="run-timer" data-start-mins="<%= m.Run_Minutes||0 %>">
+          <%= Math.floor((m.Run_Minutes||0)/60) %>h <%= (m.Run_Minutes||0)%60 %>m
+        </span>
+      </div>
+      <% } %>
+    </div>
+    <% if(m.Next_Job){ %>
+    <div class="next-job-badge"><i class="bi bi-arrow-right-circle me-1"></i>NEXT: <%= m.Next_Job %></div>
+    <% } %>
+  </div>
+</div>

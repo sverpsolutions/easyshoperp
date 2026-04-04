@@ -1,0 +1,124 @@
+<%- include('../partials/header') %>
+<div class="container-fluid p-3">
+
+  <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <h5 class="mb-0 fw-bold" style="color:#1a1a2e;">
+      <i class="bi bi-bag-fill me-2" style="color:#f59e0b;"></i>Customer Order Requests
+    </h5>
+    <div class="d-flex gap-2">
+      <% const pending=orders.filter(o=>o.Status==='Pending').length; %>
+      <% if(pending){ %><span class="badge bg-danger fs-6 py-2 px-3"><%= pending %> New</span><% } %>
+      <a href="/owner/customers" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-people me-1"></i>Customers
+      </a>
+    </div>
+  </div>
+
+  <!-- Filter tabs -->
+  <ul class="nav nav-pills mb-3" id="filterTabs">
+    <li class="nav-item"><a class="nav-link active" href="#" data-filter="all">All (<%= orders.length %>)</a></li>
+    <li class="nav-item"><a class="nav-link" href="#" data-filter="Pending">🔴 Pending (<%= orders.filter(o=>o.Status==='Pending').length %>)</a></li>
+    <li class="nav-item"><a class="nav-link" href="#" data-filter="Approved">✅ Approved</a></li>
+    <li class="nav-item"><a class="nav-link" href="#" data-filter="Rejected">❌ Rejected</a></li>
+  </ul>
+
+  <% if(!orders.length){ %>
+  <div class="text-center py-5 text-muted">
+    <i class="bi bi-bag-x fs-1 d-block mb-3"></i>
+    <h6>No order requests yet</h6>
+    <p class="small">When customers place orders via the portal, they'll appear here.</p>
+  </div>
+  <% } %>
+
+  <% const stBadge={'Pending':'warning text-dark','Reviewing':'info text-dark','Approved':'success','Rejected':'danger','In Production':'primary','Completed':'success','Dispatched':'secondary'}; %>
+
+  <div class="row g-3" id="orderCards">
+  <% orders.forEach(o=>{ %>
+  <div class="col-12 col-md-6 col-xl-4 order-card" data-status="<%= o.Status %>">
+    <div class="chart-card h-100">
+      <div class="d-flex justify-content-between align-items-start mb-2">
+        <div>
+          <div class="fw-bold fs-6"><%= o.Customer_Name %></div>
+          <div class="text-muted small"><%= o.Mobile %> • #<%= o.Request_ID %> • <%= new Date(o.Request_Date).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}) %></div>
+        </div>
+        <span class="badge bg-<%= stBadge[o.Status]||'secondary' %>"><%= o.Status %></span>
+      </div>
+
+      <div class="p-2 rounded mb-3" style="background:#f8f9fa;">
+        <div class="row g-1 small">
+          <div class="col-6"><span class="text-muted">Label:</span> <strong><%= o.Label_Name||'—' %></strong></div>
+          <div class="col-6"><span class="text-muted">Type:</span> <strong><%= o.Label_Type||'—' %></strong></div>
+          <div class="col-6"><span class="text-muted">Qty:</span> <strong class="text-primary"><%= o.Quantity.toLocaleString('en-IN') %></strong></div>
+          <div class="col-6"><span class="text-muted">Size:</span> <strong><%= o.Size||'—' %></strong></div>
+          <div class="col-6"><span class="text-muted">Paper:</span> <strong><%= o.Paper||'—' %></strong></div>
+          <div class="col-6"><span class="text-muted">Packing:</span> <strong><%= o.Packing||'—' %></strong></div>
+          <% if(o.Required_By){ %>
+          <div class="col-12"><span class="text-muted">Required By:</span> <strong class="text-danger"><%= new Date(o.Required_By).toLocaleDateString('en-IN') %></strong></div>
+          <% } %>
+        </div>
+        <% if(o.Notes){ %>
+        <div class="mt-2 small text-muted"><i class="bi bi-chat-left me-1"></i><em><%= o.Notes %></em></div>
+        <% } %>
+      </div>
+
+      <% if(o.Artwork_Path){ %>
+      <div class="mb-3">
+        <a href="<%= o.Artwork_Path %>" target="_blank" class="btn btn-outline-info btn-sm w-100">
+          <i class="bi bi-image me-1"></i>View Artwork / Design
+        </a>
+      </div>
+      <% } %>
+
+      <% if(o.Owner_Notes){ %>
+      <div class="alert alert-warning py-2 small mb-2"><i class="bi bi-chat-left-fill me-1"></i><strong>Your note:</strong> <%= o.Owner_Notes %></div>
+      <% } %>
+
+      <% if(['Pending','Reviewing'].includes(o.Status)){ %>
+      <form method="POST" action="/owner/customers/order-requests/<%= o.Request_ID %>/action">
+        <div class="mb-2">
+          <textarea name="owner_notes" class="form-control form-control-sm" rows="2"
+            placeholder="Reply to customer (optional — they'll see this in app)..."></textarea>
+        </div>
+        <div class="d-flex gap-2">
+          <button type="submit" name="action" value="Approved"
+            class="btn btn-success btn-sm flex-fill fw-bold"
+            onclick="return confirm('Approve this order? A new Job will be created automatically.')">
+            <i class="bi bi-check-lg me-1"></i>Approve & Create Job
+          </button>
+          <button type="submit" name="action" value="Rejected"
+            class="btn btn-danger btn-sm fw-bold"
+            onclick="return confirm('Reject this order request?')">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+        <% if(o.Status==='Pending'){ %>
+        <button type="submit" name="action" value="Reviewing" class="btn btn-outline-info btn-sm w-100 mt-1">
+          <i class="bi bi-eye me-1"></i>Mark as Reviewing (send to customer)
+        </button>
+        <% } %>
+      </form>
+      <% } else if(o.Status==='Approved' && o.Job_Number){ %>
+      <a href="/owner/jobs" class="btn btn-outline-primary btn-sm w-100">
+        <i class="bi bi-gear me-1"></i>View Job: <%= o.Job_Number %>
+      </a>
+      <% } %>
+    </div>
+  </div>
+  <% }) %>
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('[data-filter]').forEach(btn=>{
+  btn.addEventListener('click',function(e){
+    e.preventDefault();
+    document.querySelectorAll('[data-filter]').forEach(b=>b.classList.remove('active'));
+    this.classList.add('active');
+    const f=this.dataset.filter;
+    document.querySelectorAll('.order-card').forEach(card=>{
+      card.style.display=(f==='all'||card.dataset.status===f)?'':'none';
+    });
+  });
+});
+</script>
+<%- include('../partials/footer') %>

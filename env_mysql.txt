@@ -1,0 +1,14 @@
+# ============================================================
+# Barcode MES System — Environment Configuration (MySQL)
+# ============================================================
+
+# Server
+PORT=3000
+SESSION_SECRET=change-this-to-a-random-secret-key-minimum-32-chars
+
+# MySQL Database  (replaces SQL Server settings)
+DB_HOST=localhost
+DB_PORT=3306
+DB_NAME=BarcodeMES
+DB_USER=barcode_user
+DB_PASSWORD=your_password_here

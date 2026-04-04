@@ -1,0 +1,710 @@
+<%- include('../partials/header') %>
+
+<div class="container-fluid p-3">
+<!-- ── ADVANCE NOTIFICATION BANNER ── -->
+<% if(typeof rejectedAdv !== 'undefined' && rejectedAdv.length){ %>
+  <% rejectedAdv.forEach(a=>{ %>
+  <div class="alert alert-danger alert-dismissible d-flex align-items-start gap-2 mb-2" role="alert" style="border-left:5px solid #dc3545;">
+    <i class="bi bi-x-circle-fill fs-5 mt-1 text-danger flex-shrink-0"></i>
+    <div>
+      <strong>❌ Advance Request Rejected</strong><br>
+      Your request of <strong>₹<%= parseFloat(a.Amount_Requested).toLocaleString('en-IN') %></strong> was rejected by the owner.<br>
+      <% if(a.Reject_Reason){ %><span class="text-muted small"><i class="bi bi-chat-left-text me-1"></i>Reason: <em><%= a.Reject_Reason %></em></span><% } %>
+      <br><small class="text-muted">Requested on <%= new Date(a.Request_Date).toLocaleDateString('en-IN') %></small>
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  <% }) %>
+<% } %>
+<% if(typeof approvedAdv !== 'undefined' && approvedAdv.length){ %>
+  <div class="alert alert-success alert-dismissible d-flex align-items-start gap-2 mb-2" role="alert" style="border-left:5px solid #198754;">
+    <i class="bi bi-check-circle-fill fs-5 mt-1 text-success flex-shrink-0"></i>
+    <div>
+      <strong>✅ Advance Approved!</strong> Your request of <strong>₹<%= parseFloat(approvedAdv[0].Amount_Approved||approvedAdv[0].Amount_Requested).toLocaleString('en-IN') %></strong> is approved.<br>
+      <span class="text-muted small">Cash will be given by admin shortly. Contact admin if not received.</span>
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+<% } %>
+
+  <!-- ── QUICK ACTION BUTTONS (Attendance + Advance) ── -->
+  <div class="d-flex gap-2 mb-3 flex-wrap">
+
+    <!-- ATTENDANCE BUTTON -->
+    <% if(typeof todayAtt !== 'undefined'){ %>
+      <% if(!todayAtt || !todayAtt.In_Time){ %>
+        <!-- Not marked IN yet -->
+        <form method="POST" action="/attendance/mark" class="d-inline">
+          <input type="hidden" name="action" value="in">
+          <button type="submit" class="btn fw-bold px-4 py-2"
+                  style="background:linear-gradient(135deg,#198754,#20c997);color:white;border:none;border-radius:10px;box-shadow:0 4px 12px rgba(25,135,84,0.35);"
+                  onclick="return confirm('Mark your Attendance IN for today?')">
+            <i class="bi bi-box-arrow-in-right me-2 fs-5"></i>
+            <span class="d-block" style="font-size:0.75rem;opacity:.85;">ATTENDANCE</span>
+            <span class="fw-bold">Mark IN</span>
+          </button>
+        </form>
+      <% } else if(!todayAtt.Out_Time){ %>
+        <!-- Marked IN, not yet OUT -->
+        <div class="d-flex gap-2 align-items-center p-2 rounded" style="background:#d1e7dd;border:1.5px solid #198754;">
+          <div>
+            <div class="small fw-bold text-success"><i class="bi bi-check-circle-fill me-1"></i>Attendance IN</div>
+            <div class="fw-bold text-success"><%= new Date(todayAtt.In_Time).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}) %></div>
+          </div>
+          <form method="POST" action="/attendance/mark" class="d-inline ms-2">
+            <input type="hidden" name="action" value="out">
+            <button type="submit" class="btn fw-bold px-3 py-2"
+                    style="background:linear-gradient(135deg,#dc3545,#fd7e14);color:white;border:none;border-radius:10px;"
+                    onclick="return confirm('Mark your Attendance OUT now?')">
+              <i class="bi bi-box-arrow-right me-1"></i>Mark OUT
+            </button>
+          </form>
+        </div>
+      <% } else { %>
+        <!-- Both IN and OUT done -->
+        <div class="p-2 rounded d-flex align-items-center gap-2" style="background:#d1e7dd;border:1.5px solid #198754;">
+          <i class="bi bi-check2-all fs-4 text-success"></i>
+          <div>
+            <div class="small fw-bold text-success">Attendance Done</div>
+            <div class="small text-muted"><%= todayAtt.Total_Hours %>h • <%= todayAtt.Status %></div>
+          </div>
+        </div>
+      <% } %>
+    <% } %>
+
+    <!-- ADVANCE REQUEST BUTTON -->
+    <button onclick="openMesModal('advanceModal')" class="btn fw-bold px-4 py-2"
+            style="background:linear-gradient(135deg,#f59e0b,#f97316);color:white;border:none;border-radius:10px;box-shadow:0 4px 12px rgba(245,158,11,0.35);">
+      <i class="bi bi-cash-stack me-2 fs-5"></i>
+      <span class="d-block" style="font-size:0.75rem;opacity:.85;">SALARY</span>
+      <span class="fw-bold">Request Advance</span>
+      <% if(typeof pendingAdv !== 'undefined' && pendingAdv.length){ %>
+        <span class="badge bg-white text-warning ms-1" style="font-size:0.65rem;">Pending</span>
+      <% } %>
+    </button>
+
+  </div>
+
+  <!-- TOP STATS -->
+  <div class="row g-2 mb-3">
+    <div class="col-6 col-md-3">
+      <div class="stat-card production">
+        <div class="stat-value"><%= todayProd.toLocaleString() %></div>
+        <div class="stat-label"><i class="bi bi-box-seam me-1"></i>Today Production</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card pending">
+        <div class="stat-value"><%= assignedJobs.length %></div>
+        <div class="stat-label"><i class="bi bi-list-check me-1"></i>Pending Jobs</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card running">
+        <div class="stat-value"><%= completedToday %></div>
+        <div class="stat-label"><i class="bi bi-check-circle me-1"></i>Completed Today</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card idle">
+        <div class="stat-value"><%= todayEntries %></div>
+        <div class="stat-label"><i class="bi bi-pencil me-1"></i>Log Entries</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+
+    <!-- LEFT: Active Job -->
+    <div class="col-lg-7">
+      <% if (activeJob) { %>
+      <div class="operator-machine-card status-<%= activeJob.Status.toLowerCase() %>">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <h5 class="mb-0 fw-bold" style="color:#1a1a2e;">
+              <i class="bi bi-cpu me-2" style="color:#1a73e8;"></i><%= activeJob.Machine_Name %>
+            </h5>
+            <small class="text-muted">Machine is yours</small>
+          </div>
+          <div class="d-flex gap-2 align-items-center">
+            <span class="machine-type-badge <%= activeJob.Machine_Type==='Auto'?'badge-auto':'badge-manual' %>">
+              <%= activeJob.Machine_Type %>
+            </span>
+            <span class="machine-status-indicator status-<%= activeJob.Status.toLowerCase() %>">
+              <% if(activeJob.Status==='Running') { %><i class="bi bi-play-fill"></i><% } else { %><i class="bi bi-pause-fill"></i><% } %>
+              <%= activeJob.Status.toUpperCase() %>
+            </span>
+          </div>
+        </div>
+
+        <div class="current-job-info">
+          <!-- Job Header -->
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="fw-bold fs-6" style="color:#1a73e8;">
+              <i class="bi bi-tag-fill me-1"></i><%= activeJob.Job_Number %>
+            </span>
+            <span class="text-muted small">
+              <i class="bi bi-clock me-1"></i>
+              <span class="run-timer" data-start-mins="<%= activeJob.Run_Minutes||0 %>">
+                <%= Math.floor((activeJob.Run_Minutes||0)/60) %>h <%= (activeJob.Run_Minutes||0)%60 %>m
+              </span> running
+            </span>
+          </div>
+
+          <!-- Specs -->
+          <div class="row g-2 mb-3">
+            <div class="col-6 col-md-4">
+              <div class="job-stat">
+                <div class="job-stat-label">Party Name</div>
+                <div class="job-stat-value" style="font-size:0.85rem;"><%= activeJob.Customer_Name %></div>
+              </div>
+            </div>
+            <div class="col-6 col-md-4">
+              <div class="job-stat">
+                <div class="job-stat-label">Size</div>
+                <div class="job-stat-value"><%= activeJob.Size||'—' %></div>
+              </div>
+            </div>
+            <div class="col-6 col-md-4">
+              <div class="job-stat">
+                <div class="job-stat-label">UPS / Gap</div>
+                <div class="job-stat-value"><%= activeJob.UPS %> / <%= activeJob.Gap_Type||'—' %></div>
+              </div>
+            </div>
+            <div class="col-6 col-md-4">
+              <div class="job-stat">
+                <div class="job-stat-label">Paper</div>
+                <div class="job-stat-value"><%= activeJob.Paper||'—' %></div>
+              </div>
+            </div>
+            <div class="col-6 col-md-4">
+              <div class="job-stat">
+                <div class="job-stat-label">Core / Packing</div>
+                <div class="job-stat-value" style="font-size:0.8rem;"><%= activeJob.Core||'—' %> / <%= activeJob.Packing||'—' %></div>
+              </div>
+            </div>
+            <div class="col-6 col-md-4">
+              <div class="job-stat">
+                <div class="job-stat-label">Type</div>
+                <div class="job-stat-value"><%= activeJob.Label_Type %></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- QTY Progress -->
+          <div class="row g-2 mb-3">
+            <div class="col-4">
+              <div class="job-stat">
+                <div class="job-stat-label">Required</div>
+                <div class="job-stat-value"><%= activeJob.Required_Qty.toLocaleString() %></div>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="job-stat">
+                <div class="job-stat-label">Produced</div>
+                <div class="job-stat-value text-success"><%= activeJob.Produced_Qty.toLocaleString() %></div>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="job-stat">
+                <div class="job-stat-label">Remaining</div>
+                <div class="job-stat-value text-danger">
+                  <%= Math.max(0, activeJob.Required_Qty - activeJob.Produced_Qty).toLocaleString() %>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Progress Bar -->
+          <div class="progress mb-1" style="height:16px;border-radius:8px;background:#e9ecef;">
+            <div class="progress-bar bg-success progress-bar-striped progress-bar-animated"
+                 style="width:<%= activeJob.Job_Progress||0 %>%;border-radius:8px;font-size:0.7rem;">
+              <% if((activeJob.Job_Progress||0) > 8) { %><%= activeJob.Job_Progress||0 %>%<% } %>
+            </div>
+          </div>
+          <div class="text-center text-muted small mb-3"><%= activeJob.Job_Progress||0 %>% Complete</div>
+
+          <!-- ACTION BUTTONS -->
+          <div class="row g-2">
+            <div class="col-3">
+              <button class="btn btn-outline-warning w-100 fw-bold py-2"
+                      onclick="openMesModal('pauseModal')">
+                <i class="bi bi-pause-fill d-block fs-5"></i><span style="font-size:0.7rem;">PAUSE</span>
+              </button>
+            </div>
+            <div class="col-3">
+              <button class="btn btn-primary w-100 fw-bold py-2"
+                      onclick="openMesModal('logModal')">
+                <i class="bi bi-plus-circle-fill d-block fs-5"></i><span style="font-size:0.7rem;">LOG QTY</span>
+              </button>
+            </div>
+            <div class="col-3">
+              <button class="btn btn-warning w-100 fw-bold py-2"
+                      onclick="openMesModal('impModal')"
+                      title="Log Hourly Impressions (Flat Belt / Rotary)">
+                <i class="bi bi-speedometer d-block fs-5"></i><span style="font-size:0.7rem;">IMPR/HR</span>
+              </button>
+            </div>
+            <div class="col-3">
+              <button class="btn btn-success w-100 fw-bold py-2"
+                      onclick="openMesModal('stopModal')">
+                <i class="bi bi-check-circle-fill d-block fs-5"></i><span style="font-size:0.7rem;">COMPLETE</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <% } else { %>
+      <div class="operator-machine-card">
+        <div class="text-center py-5">
+          <i class="bi bi-inbox" style="font-size:4rem;color:#adb5bd;"></i>
+          <h5 class="mt-3 fw-bold" style="color:#6c757d;">No Active Job Running</h5>
+          <p class="text-muted">Select a job from the right panel and click <strong>START</strong></p>
+          <div class="mt-2">
+            <span class="badge bg-light text-muted border" style="font-size:0.75rem;">
+              <i class="bi bi-arrow-clockwise me-1"></i>Auto-refresh in <span id="refreshCountdown">15</span>
+            </span>
+          </div>
+          <% if (assignedJobs.length === 0) { %>
+          <div class="alert alert-info mt-3 text-start" style="max-width:400px;margin:0 auto;">
+            <i class="bi bi-info-circle me-2"></i>
+            <strong>No jobs assigned.</strong> Contact your supervisor to assign a job to you.
+          </div>
+          <% } %>
+
+
+          <!-- Job Request Button -->
+          <div class="mt-2">
+            <button class="btn btn-outline-primary btn-sm" onclick="openMesModal('jobReqModal')">
+              <i class="bi bi-clipboard-plus me-1"></i>Request a Job from Owner
+            </button>
+          </div>
+        </div>
+      </div>
+      <% } %>
+
+      <!-- Next in Queue -->
+      <% if (nextJob) { %>
+      <div class="next-job-panel mt-3">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <i class="bi bi-arrow-right-circle-fill fs-5" style="color:#1a73e8;"></i>
+          <span class="text-muted small fw-bold">NEXT IN QUEUE:</span>
+          <strong style="color:#1a73e8;"><%= nextJob.Job_Number %></strong>
+          <span>— <%= nextJob.Customer_Name %></span>
+          <span class="ms-auto text-muted small">Req: <%= nextJob.Required_Qty.toLocaleString() %></span>
+        </div>
+      </div>
+      <% } %>
+    </div>
+
+    <!-- RIGHT: Job List -->
+    <div class="col-lg-5">
+      <div class="chart-card">
+        <h6 class="fw-bold mb-3" style="color:#1a1a2e;">
+          <i class="bi bi-list-ul me-2" style="color:#1a73e8;"></i>
+          MY ASSIGNED JOBS
+          <% if(assignedJobs.length>0) { %>
+          <span class="badge bg-primary ms-1"><%= assignedJobs.length %></span>
+          <% } %>
+          <button onclick="location.reload()" class="btn btn-sm btn-outline-secondary float-end" title="Refresh">
+            <i class="bi bi-arrow-clockwise"></i>
+          </button>
+        </h6>
+
+        <% if (assignedJobs.length > 0) { %>
+        <div class="assigned-jobs-list">
+          <% assignedJobs.forEach(j => { %>
+          <div class="assigned-job-item">
+            <div class="d-flex justify-content-between align-items-start gap-2">
+              <div style="flex:1; min-width:0;">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <span class="fw-bold text-primary small"><%= j.Job_Number %></span>
+                  <span class="badge bg-<%= j.Status==='Assigned'?'success':j.Status==='Pending'?'warning text-dark':'secondary' %>">
+                    <%= j.Status %>
+                  </span>
+                </div>
+                <div class="fw-bold" style="color:#212529;"><%= j.Customer_Name %></div>
+                <div class="row g-0 mt-1" style="font-size:0.7rem;color:#6c757d;">
+                  <div class="col-6"><i class="bi bi-rulers me-1"></i><%= j.Size||'—' %></div>
+                  <div class="col-6"><i class="bi bi-layers me-1"></i><%= j.UPS %> UPS · <%= j.Gap_Type||'—' %></div>
+                  <div class="col-6"><i class="bi bi-file-earmark me-1"></i><%= j.Paper||'—' %></div>
+                  <div class="col-6"><i class="bi bi-box me-1"></i><%= j.Packing||'—' %></div>
+                  <div class="col-12 mt-1">
+                    <i class="bi bi-cpu me-1"></i>
+                    <% if(j.Machine_ID) { %>
+                      <strong><%= j.Machine_Name %></strong>
+                      <% if(j.Machine_Status==='Running') { %>
+                        <span class="badge bg-danger ms-1" style="font-size:0.6rem;">BUSY</span>
+                      <% } else { %>
+                        <span class="badge bg-success ms-1" style="font-size:0.6rem;">READY</span>
+                      <% } %>
+                    <% } else { %>
+                      <span class="text-danger">No machine assigned</span>
+                    <% } %>
+                  </div>
+                  <% if(j.Delivery_Date) { %>
+                  <div class="col-12 mt-1">
+                    <i class="bi bi-calendar-event me-1 text-danger"></i>Due: <%= j.Delivery_Date %>
+                  </div>
+                  <% } %>
+                </div>
+                <div class="mt-2 d-flex gap-2" style="font-size:0.78rem;">
+                  <strong style="color:#1a73e8;"><%= j.Required_Qty.toLocaleString() %></strong>
+                  <span class="text-muted">pcs required</span>
+                </div>
+              </div>
+
+              <!-- START BUTTON -->
+              <div class="text-center flex-shrink-0">
+                <% if (j.Machine_ID) { %>
+                  <% if (!activeJob) { %>
+                  <form action="/operator/job/start" method="POST">
+                    <input type="hidden" name="job_id" value="<%= j.Job_ID %>">
+                    <input type="hidden" name="machine_id" value="<%= j.Machine_ID %>">
+                    <button type="submit" class="btn btn-success fw-bold px-3 py-2">
+                      <i class="bi bi-play-fill d-block fs-5"></i>
+                      <span style="font-size:0.7rem;">START</span>
+                    </button>
+                  </form>
+                  <% } else { %>
+                  <button class="btn btn-secondary btn-sm" disabled title="Stop current job first">
+                    <i class="bi bi-lock"></i>
+                  </button>
+                  <% } %>
+                <% } else { %>
+                <span class="badge bg-warning text-dark p-2" style="font-size:0.65rem;">
+                  <i class="bi bi-exclamation-triangle d-block"></i>No Machine
+                </span>
+                <% } %>
+              </div>
+            </div>
+          </div>
+          <% }) %>
+        </div>
+
+        <% } else { %>
+        <div class="text-center py-5">
+          <i class="bi bi-check-all fs-1 text-success"></i>
+          <p class="mt-2 text-muted">No pending jobs. All clear!</p>
+        </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============= MODALS ============= -->
+
+<!-- LOG QTY -->
+<div id="logModal" class="custom-modal" onclick="if(event.target===this)closeMesModal('logModal')">
+  <div class="custom-modal-content">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h6 class="mb-0 fw-bold"><i class="bi bi-plus-circle-fill me-2 text-primary"></i>Log Production Qty</h6>
+      <button class="btn btn-sm btn-light" onclick="closeMesModal('logModal')"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <% if (activeJob) { %>
+    <div class="alert alert-info py-2 mb-3 small">
+      <strong><%= activeJob.Job_Number %></strong> &nbsp;|&nbsp;
+      Produced so far: <strong><%= activeJob.Produced_Qty.toLocaleString() %></strong>
+      / <%= activeJob.Required_Qty.toLocaleString() %> pcs
+    </div>
+    <form action="/operator/job/log" method="POST">
+      <input type="hidden" name="job_id" value="<%= activeJob.Job_ID %>">
+      <input type="hidden" name="machine_id" value="<%= activeJob.Machine_ID %>">
+      <div class="mb-3">
+        <label class="form-label fw-bold small">QUANTITY PRODUCED (this entry)</label>
+        <input type="number" name="qty" class="form-control form-control-lg"
+               placeholder="e.g. 500" min="1" required autofocus
+               style="font-size:1.8rem;text-align:center;font-weight:bold;">
+      </div>
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary flex-fill fw-bold py-2">
+          <i class="bi bi-check-lg me-1"></i>SAVE
+        </button>
+        <button type="button" class="btn btn-light flex-fill" onclick="closeMesModal('logModal')">Cancel</button>
+      </div>
+    </form>
+    <% } else { %>
+    <p class="text-muted text-center py-3">No active job running</p>
+    <% } %>
+  </div>
+</div>
+
+<!-- COMPLETE/STOP -->
+<div id="stopModal" class="custom-modal" onclick="if(event.target===this)closeMesModal('stopModal')">
+  <div class="custom-modal-content">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h6 class="mb-0 fw-bold"><i class="bi bi-check-circle-fill me-2 text-success"></i>Complete / Stop Job</h6>
+      <button class="btn btn-sm btn-light" onclick="closeMesModal('stopModal')"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <% if (activeJob) { %>
+    <div class="alert alert-warning py-2 mb-3 small">
+      Job <strong><%= activeJob.Job_Number %></strong> &nbsp;|&nbsp;
+      Produced: <strong class="text-success"><%= activeJob.Produced_Qty.toLocaleString() %></strong>
+      / <%= activeJob.Required_Qty.toLocaleString() %> pcs
+    </div>
+    <form action="/operator/job/stop" method="POST">
+      <input type="hidden" name="job_id" value="<%= activeJob.Job_ID %>">
+      <input type="hidden" name="machine_id" value="<%= activeJob.Machine_ID %>">
+      <div class="mb-3">
+        <label class="form-label fw-bold small">ADDITIONAL QTY (not yet logged)</label>
+        <input type="number" name="final_qty" class="form-control" value="0" min="0"
+               placeholder="0 if already logged above">
+        <div class="form-text text-muted small">Enter 0 if you already logged all quantity.</div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label fw-bold small">JOB RESULT</label>
+        <div class="row g-2">
+          <div class="col-4">
+            <input type="radio" name="status" value="Completed" id="r_comp" class="d-none" checked>
+            <label for="r_comp" class="d-block text-center p-2 rounded border fw-bold"
+                   id="lbl_comp" style="cursor:pointer;background:#d4edda;border-color:#28a745!important;color:#155724;">
+              <i class="bi bi-check-circle-fill d-block fs-4"></i>Completed
+            </label>
+          </div>
+          <div class="col-4">
+            <input type="radio" name="status" value="Paused" id="r_pause" class="d-none">
+            <label for="r_pause" class="d-block text-center p-2 rounded border fw-bold"
+                   id="lbl_pause" style="cursor:pointer;background:#fff3cd;border-color:#dee2e6!important;color:#856404;">
+              <i class="bi bi-pause-circle-fill d-block fs-4"></i>Paused
+            </label>
+          </div>
+          <div class="col-4">
+            <input type="radio" name="status" value="Cancelled" id="r_cancel" class="d-none">
+            <label for="r_cancel" class="d-block text-center p-2 rounded border fw-bold"
+                   id="lbl_cancel" style="cursor:pointer;background:#f8f9fa;border-color:#dee2e6!important;color:#dc3545;">
+              <i class="bi bi-x-circle-fill d-block fs-4"></i>Cancelled
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="d-flex gap-2 mt-3">
+        <button type="submit" class="btn btn-success flex-fill fw-bold py-2">
+          <i class="bi bi-check-lg me-1"></i>CONFIRM
+        </button>
+        <button type="button" class="btn btn-light flex-fill" onclick="closeMesModal('stopModal')">Cancel</button>
+      </div>
+    </form>
+    <% } else { %>
+    <p class="text-muted text-center py-3">No active job running</p>
+    <% } %>
+  </div>
+</div>
+
+<!-- PAUSE -->
+<div id="pauseModal" class="custom-modal" onclick="if(event.target===this)closeMesModal('pauseModal')">
+  <div class="custom-modal-content" style="max-width:340px;">
+    <h6 class="fw-bold mb-3"><i class="bi bi-pause-circle-fill me-2 text-warning"></i>Pause Job?</h6>
+    <% if (activeJob) { %>
+    <p class="text-muted small">Pausing <strong><%= activeJob.Job_Number %></strong> will set machine to Idle. You can resume later.</p>
+    <form action="/operator/job/pause" method="POST">
+      <input type="hidden" name="job_id" value="<%= activeJob.Job_ID %>">
+      <input type="hidden" name="machine_id" value="<%= activeJob.Machine_ID %>">
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-warning flex-fill fw-bold">
+          <i class="bi bi-pause-fill me-1"></i>YES, PAUSE
+        </button>
+        <button type="button" class="btn btn-light flex-fill" onclick="closeMesModal('pauseModal')">Cancel</button>
+      </div>
+    </form>
+    <% } else { %>
+    <p class="text-muted text-center">No active job</p>
+    <% } %>
+  </div>
+</div>
+
+<!-- HOURLY IMPRESSIONS -->
+<div id="impModal" class="custom-modal" onclick="if(event.target===this)closeMesModal('impModal')">
+  <div class="custom-modal-content" style="max-width:420px;">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h6 class="mb-0 fw-bold"><i class="bi bi-speedometer me-2 text-warning"></i>Log Hourly Impressions</h6>
+      <button class="btn btn-sm btn-light" onclick="closeMesModal('impModal')"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <% if (activeJob) { %>
+    <div class="alert alert-warning py-2 mb-3 small">
+      <strong>Machine:</strong> <%= activeJob.Machine_Name %> &nbsp;|&nbsp;
+      <strong>Hour:</strong> <span id="currentHour"></span>:00 &nbsp;|&nbsp;
+      Job: <strong><%= activeJob.Job_Number %></strong>
+    </div>
+    <form action="/operator/log-impressions" method="POST">
+      <input type="hidden" name="machine_id" value="<%= activeJob.Machine_ID %>">
+      <input type="hidden" name="job_id" value="<%= activeJob.Job_ID %>">
+      <div class="mb-3">
+        <label class="form-label fw-bold small">IMPRESSIONS THIS HOUR</label>
+        <input type="number" name="impressions_count" class="form-control form-control-lg"
+               placeholder="e.g. 2500" min="0" required autofocus
+               style="font-size:1.8rem;text-align:center;font-weight:bold;">
+        <div class="form-text text-muted small">
+          <i class="bi bi-info-circle me-1"></i>
+          Enter total impressions counted for the past 1 hour on this machine.
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label fw-bold small">REMARKS (optional)</label>
+        <input type="text" name="remarks" class="form-control" placeholder="e.g. Slow start, material change...">
+      </div>
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-warning flex-fill fw-bold py-2 text-dark">
+          <i class="bi bi-check-lg me-1"></i>SAVE IMPRESSIONS
+        </button>
+        <button type="button" class="btn btn-light flex-fill" onclick="closeMesModal('impModal')">Cancel</button>
+      </div>
+    </form>
+
+    <!-- Today's impression log -->
+    <div class="mt-3 border-top pt-3">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <small class="fw-bold text-muted">TODAY'S LOG</small>
+        <button class="btn btn-xs btn-outline-secondary" style="font-size:0.7rem;padding:2px 8px;" onclick="loadImpressionsToday()">
+          <i class="bi bi-arrow-clockwise"></i> Refresh
+        </button>
+      </div>
+      <div id="todayImpressions" style="max-height:150px;overflow-y:auto;font-size:0.78rem;">
+        <div class="text-muted text-center py-2"><i class="bi bi-hourglass-split me-1"></i>Loading...</div>
+      </div>
+    </div>
+    <% } else { %>
+    <div class="alert alert-info text-center">Start a job to log hourly impressions.</div>
+    <% } %>
+  </div>
+</div>
+
+<script>
+document.getElementById('currentHour').textContent = new Date().getHours();
+
+function loadImpressionsToday() {
+  fetch('/operator/impressions-today').then(r=>r.json()).then(data=>{
+    const el = document.getElementById('todayImpressions');
+    if (!data.length) {
+      el.innerHTML = '<div class="text-muted text-center py-2">No entries today yet.</div>';
+      return;
+    }
+    el.innerHTML = data.map(d=>`
+      <div class="d-flex justify-content-between align-items-center py-1 border-bottom">
+        <span><strong>${String(d.Log_Hour).padStart(2,'0')}:00</strong> &nbsp;${d.Machine_Name}</span>
+        <span class="fw-bold text-warning">${Number(d.Impressions_Count).toLocaleString()} imp</span>
+      </div>
+    `).join('');
+  }).catch(()=>{});
+}
+
+// Auto-load when modal opens
+document.getElementById('impModal')?.addEventListener('click', ()=>{});
+function openMesModal(id) {
+  document.getElementById(id).classList.add('show');
+  document.body.style.overflow = 'hidden';
+  if (id === 'impModal') {
+    document.getElementById('currentHour').textContent = new Date().getHours();
+    loadImpressionsToday();
+  }
+}
+function closeMesModal(id) {
+  document.getElementById(id).classList.remove('show');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.custom-modal.show').forEach(m => {
+      m.classList.remove('show');
+      document.body.style.overflow = '';
+    });
+  }
+});
+
+// Status radio visual highlight
+['comp','pause','cancel'].forEach(key => {
+  document.getElementById('r_' + key)?.addEventListener('change', () => {
+    ['comp','pause','cancel'].forEach(k => {
+      const lbl = document.getElementById('lbl_' + k);
+      if (lbl) lbl.style.borderColor = (k===key) ? 'currentColor' : '#dee2e6';
+    });
+  });
+});
+
+// Run timer
+setInterval(() => {
+  document.querySelectorAll('.run-timer').forEach(el => {
+    let m = parseInt(el.dataset.startMins||0)+1;
+    el.dataset.startMins = m;
+    el.textContent = `${Math.floor(m/60)}h ${m%60}m`;
+  });
+}, 60000);
+
+// Auto-refresh every 15 seconds to pick up newly assigned jobs
+// Only refresh when no active job running (to avoid interrupting operator)
+<% if (!activeJob) { %>
+let _refreshCountdown = 15;
+const _countdownEl = document.getElementById('refreshCountdown');
+setInterval(() => {
+  _refreshCountdown--;
+  if (_countdownEl) _countdownEl.textContent = _refreshCountdown + 's';
+  if (_refreshCountdown <= 0) {
+    location.reload();
+  }
+}, 1000);
+<% } %>
+</script>
+
+<!-- JOB REQUEST MODAL -->
+<div id="jobReqModal" class="custom-modal" onclick="if(event.target===this)closeMesModal('jobReqModal')">
+  <div class="custom-modal-content" style="max-width:420px;">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h6 class="fw-bold mb-0" style="color:#1a73e8;"><i class="bi bi-clipboard-plus me-2"></i>REQUEST A JOB</h6>
+      <button class="btn btn-sm btn-light" onclick="closeMesModal('jobReqModal')"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <form method="POST" action="/operator/job-request">
+      <div class="mb-3">
+        <label class="form-label fw-bold small">YOUR MACHINE (optional)</label>
+        <select name="machine_id" class="form-select">
+          <option value="">— Select Machine —</option>
+          <%- typeof machines !== 'undefined' ? machines.map(m=>`<option value="${m.Machine_ID}">${m.Machine_Name}</option>`).join('') : '' %>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label fw-bold small">WHAT DO YOU NEED? *</label>
+        <textarea name="description" class="form-control" rows="3"
+                  placeholder="e.g. Machine is idle, need a job assigned. Last job J-2026-0012 is complete." required></textarea>
+      </div>
+      <div class="d-flex gap-2 mt-3">
+        <button type="button" class="btn btn-light flex-fill" onclick="closeMesModal('jobReqModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary flex-fill fw-bold"><i class="bi bi-send me-1"></i>Send Request</button>
+      </div>
+    </form>
+    <div class="mt-3 p-2 rounded small text-muted" style="background:#f0f4ff;">
+      <i class="bi bi-info-circle me-1"></i>Owner will receive an instant alert and assign a job.
+    </div>
+  </div>
+</div>
+
+<!-- ADVANCE REQUEST MODAL -->
+<div id="advanceModal" class="custom-modal" onclick="if(event.target===this)closeMesModal('advanceModal')">
+  <div class="custom-modal-content" style="max-width:420px;">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h6 class="fw-bold mb-0" style="color:#d97706;"><i class="bi bi-cash-stack me-2"></i>REQUEST SALARY ADVANCE</h6>
+      <button class="btn btn-sm btn-light" onclick="closeMesModal('advanceModal')"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div id="advInfo" class="alert alert-info small mb-3" style="display:none;"></div>
+    <form method="POST" action="/advances/request">
+      <div class="mb-3">
+        <label class="form-label fw-bold small">AMOUNT REQUESTED (₹) *</label>
+        <input type="number" name="amount_requested" id="advAmount" class="form-control form-control-lg text-center fw-bold"
+               placeholder="Enter amount" min="100" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label fw-bold small">REASON / PURPOSE</label>
+        <textarea name="reason" class="form-control" rows="2"
+                  placeholder="e.g. Medical emergency, home rent, personal need..."></textarea>
+      </div>
+      <div class="d-flex gap-2 mt-3">
+        <button type="button" class="btn btn-light flex-fill" onclick="closeMesModal('advanceModal')">Cancel</button>
+        <button type="submit" class="btn btn-warning flex-fill fw-bold"><i class="bi bi-send me-1"></i>Send Request</button>
+      </div>
+    </form>
+    <div class="mt-3 p-2 rounded small text-muted" style="background:#f5f5f5;">
+      <i class="bi bi-info-circle me-1"></i>Request will go to owner for approval. Cash will be given by admin after approval.
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

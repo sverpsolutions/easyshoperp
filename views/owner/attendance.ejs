@@ -1,0 +1,268 @@
+<%- include('../partials/header') %>
+<div class="container-fluid p-3">
+
+  <!-- Header -->
+  <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <h5 class="mb-0 fw-bold" style="color:#1a1a2e;">
+      <i class="bi bi-calendar-check me-2" style="color:#0dcaf0;"></i>ATTENDANCE
+      <span class="text-muted fw-normal fs-6 ms-2"><%= new Date(date+'T00:00:00').toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'}) %></span>
+    </h5>
+    <div class="d-flex gap-2 flex-wrap align-items-center">
+      <% const prev = new Date(new Date(date+'T00:00:00').getTime()-86400000).toISOString().split('T')[0]; %>
+      <% const nxt  = new Date(new Date(date+'T00:00:00').getTime()+86400000).toISOString().split('T')[0]; %>
+      <% const today2 = new Date().toISOString().split('T')[0]; %>
+      <a href="/attendance?date=<%= prev %>" class="btn btn-outline-secondary btn-sm"><i class="bi bi-chevron-left"></i></a>
+      <form method="GET" class="d-inline">
+        <input type="date" name="date" class="form-control form-control-sm" value="<%= date %>" onchange="this.form.submit()" style="width:145px;">
+      </form>
+      <a href="/attendance?date=<%= nxt %>" class="btn btn-outline-secondary btn-sm" <%= nxt>today2?'style="pointer-events:none;opacity:.4;"':'' %>><i class="bi bi-chevron-right"></i></a>
+      <% if(date!==today2){ %><a href="/attendance" class="btn btn-outline-primary btn-sm">Today</a><% } %>
+      <a href="/attendance/report" class="btn btn-outline-info btn-sm"><i class="bi bi-bar-chart me-1"></i>Monthly</a>
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="row g-2 mb-3">
+    <div class="col-4 col-md-2"><div class="stat-card running"    style="cursor:default;"><div class="stat-value text-success"><%= summary.present %></div><div class="stat-label">Present</div></div></div>
+    <div class="col-4 col-md-2"><div class="stat-card stopped"    style="cursor:default;"><div class="stat-value"><%= summary.absent  %></div><div class="stat-label">Absent</div></div></div>
+    <div class="col-4 col-md-2"><div class="stat-card idle"       style="cursor:default;"><div class="stat-value"><%= summary.halfday %></div><div class="stat-label">Half Day</div></div></div>
+    <div class="col-4 col-md-2"><div class="stat-card maintenance"style="cursor:default;"><div class="stat-value"><%= summary.off     %></div><div class="stat-label">Off Day</div></div></div>
+    <div class="col-4 col-md-2"><div class="stat-card pending"    style="cursor:default;"><div class="stat-value"><%= summary.late    %></div><div class="stat-label">Late</div></div></div>
+    <div class="col-4 col-md-2"><div class="stat-card utilization"style="cursor:default;"><div class="stat-value"><%= summary.total   %></div><div class="stat-label">Total</div></div></div>
+  </div>
+
+  <!-- Main Panel -->
+  <div class="row g-3">
+    <div class="col-lg-8">
+      <div class="chart-card">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+          <h6 class="fw-bold mb-0" style="color:#1a73e8;"><i class="bi bi-people me-1"></i>Mark Attendance (<%= employees.length %> Staff)</h6>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-success" id="btnMarkAllPresent"><i class="bi bi-check-all me-1"></i>Mark All Present</button>
+            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#manualModal"><i class="bi bi-pencil me-1"></i>Manual Entry</button>
+          </div>
+        </div>
+
+        <form id="bulkForm" method="POST">
+          <input type="hidden" name="att_date" value="<%= date %>">
+          <input type="hidden" name="mark_status" id="bulkStatus" value="Off">
+          <div class="table-responsive">
+            <table class="table table-hover table-sm mb-0">
+              <thead style="background:#f8f9fa;">
+                <tr>
+                  <th><input type="checkbox" id="checkAll" class="form-check-input" title="Select all"></th>
+                  <th>Employee</th>
+                  <th>Role</th>
+                  <th>IN</th>
+                  <th>OUT</th>
+                  <th>Hrs</th>
+                  <th class="text-center">Status</th>
+                  <th>Edit</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% employees.forEach(emp => { %>
+                <% const a = emp.att; %>
+                <% const rowCls = a ? (a.Status==='Present'?'table-success':a.Status==='Half Day'?'table-warning':a.Status==='Off'||a.Status==='Holiday'?'table-secondary':a.Status==='Absent'?'table-danger':'') : 'table-light'; %>
+                <tr class="<%= rowCls %>">
+                  <td><input type="checkbox" name="employee_ids" value="<%= emp.Employee_ID %>" class="form-check-input empCheck"></td>
+                  <td>
+                    <div class="d-flex align-items-center gap-2">
+                      <% if(emp.Photo_Path){ %>
+                        <img src="<%= emp.Photo_Path %>" class="rounded-circle flex-shrink-0" style="width:28px;height:28px;object-fit:cover;">
+                      <% } else { %>
+                        <div class="rounded-circle flex-shrink-0 d-flex align-items-center justify-content-center fw-bold" style="width:28px;height:28px;background:<%= emp.Role==='Admin'?'#0d6efd':'#6c757d' %>;color:white;font-size:0.7rem;"><%= emp.Name.charAt(0) %></div>
+                      <% } %>
+                      <strong class="small"><%= emp.Name %></strong>
+                    </div>
+                  </td>
+                  <td><span class="badge <%= emp.Role==='Admin'?'bg-primary':'bg-secondary' %>" style="font-size:0.65rem;"><%= emp.Role %></span></td>
+                  <td class="small text-success fw-bold"><%= a?.In_Time  ? new Date(a.In_Time ).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}) : '—' %></td>
+                  <td class="small text-danger">          <%= a?.Out_Time ? new Date(a.Out_Time).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}) : '—' %></td>
+                  <td class="small fw-bold"><%= a?.Total_Hours ? a.Total_Hours+'h' : '—' %></td>
+                  <td class="text-center">
+                    <% if(a){ %>
+                      <span class="badge bg-<%= a.Status==='Present'?'success':a.Status==='Half Day'?'warning text-dark':a.Status==='Off'||a.Status==='Holiday'?'secondary':a.Status==='Late'?'info text-dark':'danger' %>"><%= a.Status %></span>
+                    <% } else if(emp.roster?.Is_Off_Day){ %>
+                      <span class="badge bg-secondary"><i class="bi bi-moon me-1"></i>OFF</span>
+                    <% } else { %>
+                      <span class="badge bg-light text-muted border" style="font-size:0.65rem;">Not Marked</span>
+                    <% } %>
+                  </td>
+                  <td>
+                    <button type="button" class="btn btn-xs btn-outline-secondary" style="padding:1px 6px;font-size:0.7rem;"
+                      onclick="openEdit(
+                        <%= emp.Employee_ID %>,
+                        '<%= emp.Name.replace(/'/g, "\\'") %>',
+                        '<%= a?.Status||'' %>',
+                        '<%= a?.In_Time  ? new Date(a.In_Time ).toTimeString().slice(0,5) : '' %>',
+                        '<%= a?.Out_Time ? new Date(a.Out_Time).toTimeString().slice(0,5) : '' %>'
+                      )"><i class="bi bi-pencil"></i></button>
+                  </td>
+                </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Bulk action bar -->
+          <div id="bulkBar" class="mt-3 p-2 rounded d-none" style="background:#f0f7ff;border:1.5px solid #1a73e8;">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+              <span class="fw-bold small text-primary"><span id="selCount">0</span> selected</span>
+              <button type="submit" formaction="/attendance/bulk-present" class="btn btn-sm btn-success fw-bold"><i class="bi bi-check-lg me-1"></i>Mark Present</button>
+              <button type="submit" formaction="/attendance/bulk-off" class="btn btn-sm btn-secondary fw-bold"   onclick="document.getElementById('bulkStatus').value='Off'"><i class="bi bi-moon me-1"></i>Mark OFF</button>
+              <button type="submit" formaction="/attendance/bulk-off" class="btn btn-sm btn-danger fw-bold"      onclick="document.getElementById('bulkStatus').value='Absent'"><i class="bi bi-person-x me-1"></i>Mark Absent</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- RIGHT: Shift Roster -->
+    <div class="col-lg-4">
+      <div class="chart-card mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h6 class="fw-bold mb-0" style="color:#6f42c1;"><i class="bi bi-calendar3-week me-1"></i>Shift Roster</h6>
+          <button class="btn btn-xs btn-outline-primary" style="padding:2px 8px;font-size:0.75rem;" data-bs-toggle="modal" data-bs-target="#rosterModal">
+            <i class="bi bi-plus-lg me-1"></i>Assign
+          </button>
+        </div>
+        <% const rosterEmps = employees.filter(e => e.roster); %>
+        <% if(rosterEmps.length){ %>
+          <% rosterEmps.forEach(e=>{ %>
+          <div class="d-flex justify-content-between align-items-center py-1 border-bottom small">
+            <strong><%= e.Name %></strong>
+            <% if(e.roster.Is_Off_Day){ %>
+              <span class="badge bg-secondary"><i class="bi bi-moon me-1"></i>OFF</span>
+            <% } else { %>
+              <span class="badge bg-primary" style="font-size:0.65rem;"><%= e.roster.Shift_Name||'Shift' %></span>
+            <% } %>
+          </div>
+          <% }) %>
+        <% } else { %>
+          <div class="text-center text-muted small py-3">
+            <i class="bi bi-calendar3 d-block fs-4 mb-1"></i>No roster for this date
+          </div>
+        <% } %>
+      </div>
+
+      <!-- Shift Timings Reference -->
+      <div class="chart-card">
+        <h6 class="fw-bold mb-2 small text-muted"><i class="bi bi-clock me-1"></i>SHIFT TIMINGS</h6>
+        <% shifts.forEach(s=>{ %>
+        <div class="d-flex justify-content-between py-1 border-bottom small">
+          <span class="fw-bold"><%= s.Shift_Name %></span>
+          <span class="text-muted"><%= String(s.Start_Time).slice(0,5) %> – <%= String(s.End_Time).slice(0,5) %></span>
+        </div>
+        <% }) %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Manual Entry Modal -->
+<div class="modal fade" id="manualModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header" style="background:#1a1a2e;"><h5 class="modal-title text-white fw-bold"><i class="bi bi-pencil-square me-2"></i>Manual Attendance</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+      <form method="POST" action="/attendance/manual">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label fw-bold small">EMPLOYEE *</label>
+              <select name="employee_id" id="manualEmp" class="form-select" required>
+                <option value="">Select employee...</option>
+                <% employees.forEach(e=>{ %><option value="<%= e.Employee_ID %>"><%= e.Name %> (<%= e.Role %>)</option><% }) %>
+              </select>
+            </div>
+            <div class="col-6"><label class="form-label fw-bold small">DATE</label><input type="date" name="att_date" class="form-control" value="<%= date %>" required></div>
+            <div class="col-6"><label class="form-label fw-bold small">STATUS *</label>
+              <select name="status" id="manualStatus" class="form-select">
+                <option>Present</option><option>Half Day</option><option>Late</option>
+                <option>Absent</option><option>Off</option><option>Holiday</option>
+              </select>
+            </div>
+            <div class="col-6"><label class="form-label fw-bold small">IN TIME</label><input type="time" name="in_time"  id="manualIn"  class="form-control"></div>
+            <div class="col-6"><label class="form-label fw-bold small">OUT TIME</label><input type="time" name="out_time" id="manualOut" class="form-control"></div>
+            <div class="col-6"><label class="form-label fw-bold small">SHIFT</label>
+              <select name="shift_id" class="form-select">
+                <option value="">None</option>
+                <% shifts.forEach(s=>{ %><option value="<%= s.Shift_ID %>"><%= s.Shift_Name %></option><% }) %>
+              </select>
+            </div>
+            <div class="col-6"><label class="form-label fw-bold small">REMARKS</label><input type="text" name="remarks" class="form-control" placeholder="Optional"></div>
+          </div>
+        </div>
+        <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary fw-bold"><i class="bi bi-check-lg me-1"></i>Save</button></div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Roster Modal -->
+<div class="modal fade" id="rosterModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header" style="background:#6f42c1;"><h5 class="modal-title text-white fw-bold"><i class="bi bi-calendar3 me-2"></i>Assign Shift / Off Day</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+      <form method="POST" action="/attendance/roster">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-12"><label class="form-label fw-bold small">EMPLOYEE</label>
+              <select name="employee_id" class="form-select" required>
+                <% employees.forEach(e=>{ %><option value="<%= e.Employee_ID %>"><%= e.Name %></option><% }) %>
+              </select>
+            </div>
+            <div class="col-6"><label class="form-label fw-bold small">DATE</label><input type="date" name="roster_date" class="form-control" value="<%= date %>" required></div>
+            <div class="col-6"><label class="form-label fw-bold small">SHIFT</label>
+              <select name="shift_id" class="form-select">
+                <option value="">None</option>
+                <% shifts.forEach(s=>{ %><option value="<%= s.Shift_ID %>"><%= s.Shift_Name %></option><% }) %>
+              </select>
+            </div>
+            <div class="col-12">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" name="is_off_day" value="1" id="offCheck">
+                <label class="form-check-label fw-bold" for="offCheck"><i class="bi bi-moon me-1"></i>Mark as OFF Day</label>
+              </div>
+            </div>
+            <div class="col-12"><label class="form-label fw-bold small">NOTES</label><input type="text" name="notes" class="form-control" placeholder="e.g. Weekly Off, Eid..."></div>
+          </div>
+        </div>
+        <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn fw-bold" style="background:#6f42c1;color:white;"><i class="bi bi-check-lg me-1"></i>Save</button></div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+// Select-all
+document.getElementById('checkAll').addEventListener('change', function(){
+  document.querySelectorAll('.empCheck').forEach(c => c.checked = this.checked);
+  updateBulkBar();
+});
+document.querySelectorAll('.empCheck').forEach(c => c.addEventListener('change', updateBulkBar));
+function updateBulkBar(){
+  const n = document.querySelectorAll('.empCheck:checked').length;
+  document.getElementById('selCount').textContent = n;
+  document.getElementById('bulkBar').classList.toggle('d-none', n===0);
+}
+
+// Mark all present
+document.getElementById('btnMarkAllPresent').addEventListener('click', function(){
+  if(!confirm('Mark ALL <%= employees.length %> employees as Present for this date?')) return;
+  document.querySelectorAll('.empCheck').forEach(c => c.checked=true);
+  const f = document.getElementById('bulkForm');
+  f.setAttribute('action', '/attendance/bulk-present');
+  f.submit();
+});
+
+// Pre-fill manual modal
+function openEdit(eid, name, status, inTime, outTime){
+  document.getElementById('manualEmp').value = eid;
+  if(status) document.getElementById('manualStatus').value = status;
+  if(inTime)  document.getElementById('manualIn').value  = inTime;
+  if(outTime) document.getElementById('manualOut').value = outTime;
+  new bootstrap.Modal(document.getElementById('manualModal')).show();
+}
+</script>
+<%- include('../partials/footer') %>

@@ -1,0 +1,14 @@
+{
+  "name": "Barcode MES — Customer Portal",
+  "short_name": "BarcodeOrders",
+  "description": "Place and track your label orders",
+  "start_url": "/portal/dashboard",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#f59e0b",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/img/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/img/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

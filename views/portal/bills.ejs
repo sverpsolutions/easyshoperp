@@ -1,0 +1,85 @@
+<%- include('_head') %>
+
+<div class="topbar">
+  <a href="/portal/dashboard" class="topbar-icon" style="text-decoration:none;"><i class="bi bi-arrow-left"></i></a>
+  <div class="topbar-title">My Bills</div>
+  <div class="topbar-icon"></div>
+</div>
+
+<div class="page-pad">
+
+  <!-- Balance Summary -->
+  <% if(customer){ %>
+  <div style="background:linear-gradient(135deg,#1e3a5f,#0f172a);border-radius:18px;padding:20px;margin-bottom:16px;color:white;">
+    <div style="font-size:0.75rem;opacity:.7;margin-bottom:4px;font-weight:600;letter-spacing:.5px;">RUNNING ACCOUNT BALANCE</div>
+    <div style="font-size:2rem;font-weight:800;letter-spacing:-1px;">
+      ₹<%= Math.abs(customer.Current_Balance||0).toLocaleString('en-IN') %>
+    </div>
+    <div style="font-size:0.8rem;opacity:.75;margin-top:4px;">
+      <% if((customer.Current_Balance||0) > 0){ %>
+        <i class="bi bi-arrow-up-circle me-1"></i>Amount you owe us
+      <% } else if((customer.Current_Balance||0) < 0){ %>
+        <i class="bi bi-arrow-down-circle me-1"></i>Advance / Credit balance
+      <% } else { %>
+        <i class="bi bi-check-circle me-1"></i>Account is clear
+      <% } %>
+    </div>
+  </div>
+  <% } %>
+
+  <% if(!bills.length){ %>
+  <div class="empty">
+    <i class="bi bi-receipt"></i>
+    <div style="font-weight:600;font-size:1rem;color:#475569;">No bills yet</div>
+    <div style="font-size:0.82rem;margin-top:6px;">Your invoices will appear here</div>
+  </div>
+  <% } %>
+
+  <% const pmtCls={Paid:'bs-paid','Partial Payment':'bs-partial',Unpaid:'bs-unpaid'}; %>
+
+  <% bills.forEach(b=>{ %>
+  <div class="card-m">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+      <div>
+        <div style="font-weight:700;font-size:0.95rem;color:#0f172a;"><%= b.Bill_Number||('BILL-'+b.Bill_ID) %></div>
+        <div style="font-size:0.75rem;color:#94a3b8;margin-top:2px;">
+          <%= new Date(b.Bill_Date).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}) %>
+          <% if(b.Job_Number){ %> • Job: <%= b.Job_Number %><% } %>
+        </div>
+      </div>
+      <span class="badge-status <%= pmtCls[b.Payment_Status]||'bs-unpaid' %>"><%= b.Payment_Status||'Unpaid' %></span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+      <div style="background:#f8fafc;border-radius:10px;padding:9px;text-align:center;">
+        <div style="font-size:0.62rem;color:#94a3b8;font-weight:600;">AMOUNT</div>
+        <div style="font-weight:700;font-size:0.9rem;color:#0f172a;">₹<%= parseFloat(b.Net_Amount||0).toLocaleString('en-IN') %></div>
+      </div>
+      <div style="background:#f8fafc;border-radius:10px;padding:9px;text-align:center;">
+        <div style="font-size:0.62rem;color:#94a3b8;font-weight:600;">PAID</div>
+        <div style="font-weight:700;font-size:0.9rem;color:#16a34a;">₹<%= parseFloat(b.Amount_Paid||0).toLocaleString('en-IN') %></div>
+      </div>
+      <div style="background:<%= (b.Balance_Due||0)>0?'#fee2e2':'#f0fdf4' %>;border-radius:10px;padding:9px;text-align:center;">
+        <div style="font-size:0.62rem;color:#94a3b8;font-weight:600;">DUE</div>
+        <div style="font-weight:700;font-size:0.9rem;color:<%= (b.Balance_Due||0)>0?'#dc2626':'#16a34a' %>;">₹<%= parseFloat(b.Balance_Due||0).toLocaleString('en-IN') %></div>
+      </div>
+    </div>
+
+    <% if((b.Balance_Due||0)>0){ %>
+    <div style="margin-top:10px;background:#fef2f2;border-radius:10px;padding:9px 12px;font-size:0.78rem;color:#dc2626;display:flex;align-items:center;gap:6px;">
+      <i class="bi bi-exclamation-circle-fill"></i>
+      Payment pending — Contact us to clear this bill
+    </div>
+    <% } %>
+  </div>
+  <% }) %>
+</div>
+
+<nav class="bottomnav">
+  <a href="/portal/dashboard" class="nav-item"><i class="bi bi-house-fill"></i>Home</a>
+  <a href="/portal/orders"    class="nav-item"><i class="bi bi-bag"></i>Orders</a>
+  <a href="/portal/jobs"      class="nav-item"><i class="bi bi-gear"></i>Jobs</a>
+  <a href="/portal/bills"     class="nav-item active"><i class="bi bi-receipt"></i>Bills</a>
+  <a href="/portal/profile"   class="nav-item"><i class="bi bi-person"></i>Profile</a>
+</nav>
+</body></html>

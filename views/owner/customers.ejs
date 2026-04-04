@@ -1,0 +1,128 @@
+<%- include('../partials/header') %>
+<div class="container-fluid p-3">
+  <!-- Header -->
+  <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <h5 class="mb-0 fw-bold" style="color:#1a1a2e;"><i class="bi bi-building me-2" style="color:#0dcaf0;"></i>CUSTOMER MASTER</h5>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCustomerModal">
+      <i class="bi bi-plus-circle me-1"></i>Add Customer
+    </button>
+  </div>
+
+  <!-- Search -->
+  <form method="GET" class="mb-3 d-flex gap-2">
+    <input type="text" name="search" class="form-control" placeholder="Search by name, mobile, GST..." value="<%= search %>" style="max-width:350px;">
+    <button class="btn btn-outline-primary"><i class="bi bi-search"></i></button>
+    <% if(search){ %><a href="/owner/customers" class="btn btn-outline-secondary"><i class="bi bi-x"></i></a><% } %>
+  </form>
+
+  <!-- Stats row -->
+  <div class="row g-2 mb-3">
+    <div class="col-6 col-md-3"><div class="stat-card running"><div class="stat-value"><%= customers.length %></div><div class="stat-label">Total Customers</div></div></div>
+    <div class="col-6 col-md-3"><div class="stat-card pending"><div class="stat-value">₹<%= customers.reduce((s,c)=>s+parseFloat(c.Current_Balance||0),0).toLocaleString('en-IN') %></div><div class="stat-label">Total Outstanding</div></div></div>
+    <div class="col-6 col-md-3"><div class="stat-card idle"><div class="stat-value"><%= customers.filter(c=>c.Category==='Wholesale').length %></div><div class="stat-label">Wholesale</div></div></div>
+    <div class="col-6 col-md-3"><div class="stat-card utilization"><div class="stat-value"><%= customers.filter(c=>c.Category==='Regular').length %></div><div class="stat-label">Regular</div></div></div>
+  </div>
+
+  <!-- Table -->
+  <div class="chart-card">
+    <div class="table-responsive">
+      <table class="table table-hover table-sm mb-0">
+        <thead style="background:#f8f9fa;">
+          <tr>
+            <th>#</th><th>Customer Name</th><th>Mobile</th><th>City</th><th>Category</th>
+            <th>GST No</th><th>Total Jobs</th><th>Credit Limit</th><th class="text-end">Outstanding (₹)</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% customers.forEach((c,i) => { %>
+          <tr>
+            <td class="text-muted small"><%= i+1 %></td>
+            <td><a href="/owner/customers/<%= c.Customer_ID %>" class="fw-bold text-decoration-none"><%= c.Customer_Name %></a></td>
+            <td class="small"><%= c.Mobile %></td>
+            <td class="small"><%= c.City||'—' %></td>
+            <td><span class="badge <%= c.Category==='Wholesale'?'bg-primary':c.Category==='Corporate'?'bg-dark':'bg-secondary' %>"><%= c.Category %></span></td>
+            <td class="small text-muted"><%= c.GST_No||'—' %></td>
+            <td class="text-center"><%= c.Total_Jobs||0 %></td>
+            <td class="text-end small">₹<%= parseFloat(c.Credit_Limit||0).toLocaleString('en-IN') %></td>
+            <td class="text-end fw-bold <%= parseFloat(c.Current_Balance||0)>0?'text-danger':parseFloat(c.Current_Balance||0)<0?'text-success':'' %>">
+              ₹<%= Math.abs(parseFloat(c.Current_Balance||0)).toLocaleString('en-IN') %>
+              <% if(parseFloat(c.Current_Balance||0)>0){ %><small class="text-danger"> Dr</small><% } %>
+              <% if(parseFloat(c.Current_Balance||0)<0){ %><small class="text-success"> Cr</small><% } %>
+            </td>
+            <td>
+              <a href="/owner/customers/<%= c.Customer_ID %>" class="btn btn-xs btn-outline-primary" style="padding:2px 8px;font-size:0.75rem;"><i class="bi bi-eye"></i></a>
+            </td>
+          </tr>
+          <% }) %>
+          <% if(!customers.length){ %><tr><td colspan="10" class="text-center text-muted py-4">No customers found</td></tr><% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Add Customer Modal -->
+<div class="modal fade" id="addCustomerModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header" style="background:#1a1a2e;">
+        <h5 class="modal-title text-white fw-bold"><i class="bi bi-person-plus me-2"></i>Add New Customer</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" action="/owner/customers">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-bold small">CUSTOMER / PARTY NAME *</label>
+              <input type="text" name="customer_name" class="form-control" required placeholder="e.g. SHARAN TRADING">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-bold small">MOBILE *</label>
+              <input type="text" name="mobile" class="form-control" required placeholder="9XXXXXXXXX">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-bold small">ALT MOBILE</label>
+              <input type="text" name="alt_mobile" class="form-control" placeholder="Optional">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold small">ADDRESS</label>
+              <input type="text" name="address" class="form-control" placeholder="Full address">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-bold small">CITY</label>
+              <input type="text" name="city" class="form-control" placeholder="Delhi, Mumbai...">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-bold small">CATEGORY</label>
+              <select name="category" class="form-select">
+                <option>Regular</option><option>Wholesale</option><option>Retail</option><option>Corporate</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold small">GST NUMBER</label>
+              <input type="text" name="gst_no" class="form-control" placeholder="15-digit GST">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold small">CREDIT LIMIT (₹)</label>
+              <input type="number" name="credit_limit" class="form-control" placeholder="0" min="0">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold small">OPENING BALANCE (₹)</label>
+              <input type="number" name="opening_balance" class="form-control" placeholder="0 = no pending amount">
+              <div class="form-text">Enter if customer already owes you money</div>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-bold small">NOTES</label>
+              <textarea name="notes" class="form-control" rows="2" placeholder="Any special notes..."></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Save Customer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<%- include('../partials/footer') %>

@@ -1,0 +1,220 @@
+<%- include('../partials/header') %>
+
+<div class="container-fluid p-3" style="max-width:900px;">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h5 class="fw-bold mb-0" style="color:#1a1a2e;">
+      <i class="bi bi-gear-fill me-2" style="color:#1a73e8;"></i>SYSTEM SETTINGS
+    </h5>
+    <a href="/owner/dashboard" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left me-1"></i>Back
+    </a>
+  </div>
+
+  <form action="/owner/settings" method="POST">
+
+    <!-- ── GENERAL SETTINGS ───────────────────────── -->
+    <div class="chart-card mb-4">
+      <h6 class="fw-bold mb-3" style="color:#1a1a2e; border-bottom:2px solid #e9ecef; padding-bottom:8px;">
+        <i class="bi bi-building me-2" style="color:#1a73e8;"></i>General
+      </h6>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label fw-bold small">FACTORY NAME</label>
+          <input type="text" name="factory_name" class="form-control"
+                 value="<%= settings.factory_name ? settings.factory_name.setting_value : 'Barcode Label Factory' %>"
+                 placeholder="Your factory name">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-bold small">FACTORY MOBILE / WHATSAPP</label>
+          <input type="text" name="factory_mobile" class="form-control"
+                 value="<%= settings.factory_mobile ? settings.factory_mobile.setting_value : '' %>"
+                 placeholder="e.g. 9876543210">
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TELEGRAM SETTINGS ──────────────────────── -->
+    <div class="chart-card mb-4">
+      <h6 class="fw-bold mb-3" style="color:#1a1a2e; border-bottom:2px solid #e9ecef; padding-bottom:8px;">
+        <i class="bi bi-telegram me-2" style="color:#0088cc;"></i>Telegram Bot Integration
+      </h6>
+
+      <!-- HOW TO SETUP GUIDE -->
+      <div class="alert" style="background:#e8f4fd; border:1px solid #bee3f8; border-radius:10px; color:#1a1a2e;">
+        <h6 class="fw-bold mb-2"><i class="bi bi-info-circle me-2" style="color:#0088cc;"></i>How to Set Up Telegram Bot</h6>
+        <ol class="mb-0 small" style="line-height:2;">
+          <li>Open Telegram → Search <strong>@BotFather</strong> → Send <code>/newbot</code></li>
+          <li>Name your bot (e.g. <em>BarcodeMES Bot</em>) → Copy the <strong>Bot Token</strong></li>
+          <li>Start a chat with your bot → Send any message</li>
+          <li>To get your Chat ID: go to <code>https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code></li>
+          <li>For <strong>customer chat ID</strong>: customer must first send a message to your bot</li>
+        </ol>
+      </div>
+
+      <div class="row g-3 mt-1">
+        <div class="col-12">
+          <!-- Toggle -->
+          <div class="d-flex align-items-center gap-3 p-3 rounded" style="background:#f8f9fa; border:1px solid #dee2e6;">
+            <div class="form-check form-switch mb-0">
+              <input class="form-check-input" type="checkbox" id="tg_enabled" name="telegram_enabled" value="1"
+                     style="width:3em; height:1.5em;"
+                     <%= (settings.telegram_enabled && settings.telegram_enabled.setting_value==='1') ? 'checked' : '' %>>
+            </div>
+            <div>
+              <label for="tg_enabled" class="fw-bold mb-0" style="cursor:pointer; color:#1a1a2e;">
+                Enable Telegram Notifications
+              </label>
+              <div class="text-muted small">Turn on/off all Telegram messages</div>
+            </div>
+            <span class="badge ms-auto <%= (settings.telegram_enabled && settings.telegram_enabled.setting_value==='1') ? 'bg-success' : 'bg-secondary' %>"
+                  id="tgStatusBadge">
+              <%= (settings.telegram_enabled && settings.telegram_enabled.setting_value==='1') ? 'ENABLED' : 'DISABLED' %>
+            </span>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label fw-bold small">BOT TOKEN <span class="text-danger">*</span></label>
+          <input type="text" name="telegram_bot_token" id="botToken" class="form-control font-monospace"
+                 value="<%= settings.telegram_bot_token ? settings.telegram_bot_token.setting_value : '' %>"
+                 placeholder="1234567890:ABCDefGh...">
+          <div class="form-text">Get from @BotFather on Telegram</div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-bold small">OWNER CHAT ID <span class="text-danger">*</span></label>
+          <input type="text" name="telegram_owner_chat_id" id="ownerChatId" class="form-control font-monospace"
+                 value="<%= settings.telegram_owner_chat_id ? settings.telegram_owner_chat_id.setting_value : '' %>"
+                 placeholder="e.g. 123456789 or -1001234567">
+          <div class="form-text">Your personal Telegram chat ID</div>
+        </div>
+
+        <!-- Test button -->
+        <div class="col-12">
+          <button type="button" class="btn btn-outline-primary" onclick="testTelegram()">
+            <i class="bi bi-send me-1"></i>Send Test Message
+          </button>
+          <span id="testResult" class="ms-3 small fw-bold"></span>
+        </div>
+      </div>
+
+      <!-- ── NOTIFICATION TRIGGERS ── -->
+      <hr class="my-4">
+      <h6 class="fw-bold mb-3" style="color:#495057;">
+        <i class="bi bi-bell me-2"></i>When to Send Notifications
+      </h6>
+      <div class="row g-3">
+        <% [
+          { key:'notify_on_job_start',   icon:'bi-play-fill text-success',   label:'Job Started',              desc:'When operator clicks START on a job' },
+          { key:'notify_on_job_complete',icon:'bi-check-circle-fill text-success', label:'Job Completed',     desc:'When operator completes a job' },
+          { key:'notify_on_log',         icon:'bi-plus-circle-fill text-primary',  label:'Every Production Log', desc:'Send message on every qty log entry (high volume)' },
+          { key:'notify_milestones',     icon:'bi-flag-fill text-warning',    label:'Progress Milestones (25%/50%/75%)', desc:'Notify at production milestones' },
+          { key:'notify_status_change',  icon:'bi-arrow-repeat text-info',    label:'Status Changes',          desc:'When job status is updated by owner/admin' }
+        ].forEach(item => { %>
+        <div class="col-md-6">
+          <div class="d-flex align-items-start gap-3 p-3 rounded" style="background:#f8f9fa; border:1px solid #dee2e6;">
+            <div class="form-check form-switch mb-0 mt-1">
+              <input class="form-check-input" type="checkbox" name="<%= item.key %>" value="1"
+                     style="width:2.5em; height:1.3em;"
+                     <%= (settings[item.key] && settings[item.key].setting_value==='1') ? 'checked' : '' %>>
+            </div>
+            <div>
+              <div class="fw-bold small">
+                <i class="bi <%= item.icon %> me-1"></i><%= item.label %>
+              </div>
+              <div class="text-muted" style="font-size:0.72rem;"><%= item.desc %></div>
+            </div>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+    </div>
+
+    <!-- SAVE -->
+    <div class="d-flex gap-2">
+      <button type="submit" class="btn btn-primary fw-bold px-5 py-2">
+        <i class="bi bi-check-lg me-2"></i>SAVE SETTINGS
+      </button>
+      <a href="/owner/dashboard" class="btn btn-light px-4">Cancel</a>
+    </div>
+  </form>
+
+  <!-- ── CHATBOT INFO ───────────────────────────── -->
+  <div class="chart-card mt-4">
+    <h6 class="fw-bold mb-3" style="color:#1a1a2e; border-bottom:2px solid #e9ecef; padding-bottom:8px;">
+      <i class="bi bi-robot me-2" style="color:#6f42c1;"></i>Customer Order Status Chatbot
+    </h6>
+    <div class="alert" style="background:#f3e8ff; border:1px solid #d8b4fe; border-radius:10px; color:#1a1a2e;">
+      <h6 class="fw-bold mb-2">How customers check their order status:</h6>
+      <ol class="mb-2 small" style="line-height:2.2;">
+        <li>Customer opens Telegram → finds <strong>your bot</strong> (share the bot link with customers)</li>
+        <li>Sends their <strong>Order Number</strong> (e.g. <code>J-2025-0001</code>)</li>
+        <li>Bot replies with full order status, qty produced, delivery date</li>
+      </ol>
+      <div class="small text-muted">
+        <i class="bi bi-info-circle me-1"></i>
+        To enable customer notifications for a specific job, tick the <strong>"Telegram Notify"</strong>
+        checkbox when creating the job and enter the customer's Telegram Chat ID.
+      </div>
+    </div>
+
+    <% if (settings.telegram_bot_token && settings.telegram_bot_token.setting_value) { %>
+    <div class="mt-2">
+      <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Bot Configured</span>
+      <span class="text-muted small ms-2">
+        Webhook: <code>POST /api/telegram/webhook</code>
+      </span>
+    </div>
+    <% } else { %>
+    <div class="text-muted small">
+      <i class="bi bi-exclamation-triangle text-warning me-1"></i>
+      Configure the bot token above to enable the customer chatbot.
+    </div>
+    <% } %>
+  </div>
+</div>
+
+<script>
+// Toggle badge text when switch clicked
+document.getElementById('tg_enabled').addEventListener('change', function() {
+    const badge = document.getElementById('tgStatusBadge');
+    badge.textContent = this.checked ? 'ENABLED' : 'DISABLED';
+    badge.className = 'badge ms-auto ' + (this.checked ? 'bg-success' : 'bg-secondary');
+});
+
+// Test Telegram
+async function testTelegram() {
+    const token  = document.getElementById('botToken').value.trim();
+    const chatId = document.getElementById('ownerChatId').value.trim();
+    const el     = document.getElementById('testResult');
+
+    if (!token || !chatId) {
+        el.textContent = '⚠️ Enter Bot Token and Chat ID first';
+        el.style.color = '#f59e0b';
+        return;
+    }
+
+    el.textContent = '⏳ Sending...';
+    el.style.color = '#6c757d';
+
+    try {
+        const res  = await fetch('/owner/settings/test-telegram', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ bot_token: token, chat_id: chatId })
+        });
+        const data = await res.json();
+        if (data.ok) {
+            el.textContent = '✅ Test message sent! Check your Telegram.';
+            el.style.color = '#28a745';
+        } else {
+            el.textContent = '❌ Failed: ' + (data.error || 'Unknown error');
+            el.style.color = '#dc3545';
+        }
+    } catch(e) {
+        el.textContent = '❌ Network error: ' + e.message;
+        el.style.color = '#dc3545';
+    }
+}
+</script>
+
+<%- include('../partials/footer') %>

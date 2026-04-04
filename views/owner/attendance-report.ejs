@@ -1,0 +1,49 @@
+<%- include('../partials/header') %>
+<div class="container-fluid p-3">
+  <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <h5 class="mb-0 fw-bold" style="color:#1a1a2e;"><i class="bi bi-bar-chart me-2 text-info"></i>ATTENDANCE REPORT — <%= month %></h5>
+    <div class="d-flex gap-2">
+      <form method="GET" class="d-flex gap-2">
+        <input type="month" name="month" class="form-control" value="<%= month %>" onchange="this.form.submit()">
+      </form>
+      <a href="/attendance" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Today</a>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="table-responsive">
+      <table class="table table-hover table-sm mb-0">
+        <thead style="background:#1a1a2e;color:white;">
+          <tr>
+            <th>#</th><th>Employee</th><th>Role</th>
+            <th class="text-center text-success">Present</th>
+            <th class="text-center text-warning">Half Day</th>
+            <th class="text-center text-danger">Absent</th>
+            <th class="text-center text-secondary">Off</th>
+            <th class="text-center text-info">Late</th>
+            <th class="text-center">Total Hours</th>
+            <th class="text-center">Work Days</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% report.forEach((r,i)=>{ %>
+          <% const workDays = r.Present_Days + r.Half_Days * 0.5; %>
+          <tr>
+            <td class="text-muted small"><%= i+1 %></td>
+            <td><strong><%= r.Name %></strong></td>
+            <td><span class="badge <%= r.Role==='Admin'?'bg-primary':'bg-secondary' %>"><%= r.Role %></span></td>
+            <td class="text-center"><span class="badge bg-success"><%= r.Present_Days %></span></td>
+            <td class="text-center"><span class="badge bg-warning text-dark"><%= r.Half_Days %></span></td>
+            <td class="text-center"><span class="badge bg-danger"><%= r.Absent_Days %></span></td>
+            <td class="text-center"><span class="badge bg-secondary"><%= r.Off_Days %></span></td>
+            <td class="text-center"><span class="badge bg-info text-dark"><%= r.Late_Days %></span></td>
+            <td class="text-center fw-bold"><%= parseFloat(r.Total_Hours||0).toFixed(1) %> h</td>
+            <td class="text-center fw-bold <%= workDays<20?'text-danger':'' %>"><%= workDays.toFixed(1) %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<%- include('../partials/footer') %>

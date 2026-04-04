@@ -1,0 +1,179 @@
+<%- include('../partials/header') %>
+<div class="container-fluid p-3">
+  <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <h5 class="mb-0 fw-bold" style="color:#1a1a2e;"><i class="bi bi-receipt me-2" style="color:#0dcaf0;"></i>BILL REGISTER</h5>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addBillModal"><i class="bi bi-plus-circle me-1"></i>New Bill</button>
+  </div>
+
+  <!-- Filters -->
+  <form method="GET" class="mb-3">
+    <div class="d-flex gap-2 flex-wrap">
+      <input type="date" name="from" class="form-control" style="width:150px;" value="<%= from %>">
+      <input type="date" name="to"   class="form-control" style="width:150px;" value="<%= to %>">
+      <select name="status" class="form-select" style="width:140px;">
+        <option value="">All Status</option>
+        <% ['Unpaid','Partial','Paid','Cancelled'].forEach(s=>{ %>
+        <option <%= status===s?'selected':'' %>><%= s %></option>
+        <% }) %>
+      </select>
+      <input type="text" name="search" class="form-control" style="width:200px;" placeholder="Bill no / customer..." value="<%= search %>">
+      <button class="btn btn-outline-primary"><i class="bi bi-search"></i></button>
+      <a href="/owner/bills" class="btn btn-outline-secondary"><i class="bi bi-x"></i></a>
+    </div>
+  </form>
+
+  <!-- Summary -->
+  <div class="row g-2 mb-3">
+    <div class="col-6 col-md-3"><div class="stat-card running"><div class="stat-value"><%= summary.Total_Bills||0 %></div><div class="stat-label">Total Bills</div></div></div>
+    <div class="col-6 col-md-3"><div class="stat-card idle"><div class="stat-value">₹<%= parseFloat(summary.Total_Amount||0).toLocaleString('en-IN') %></div><div class="stat-label">Total Billed</div></div></div>
+    <div class="col-6 col-md-3"><div class="stat-card maintenance"><div class="stat-value">₹<%= parseFloat(summary.Total_Paid||0).toLocaleString('en-IN') %></div><div class="stat-label">Total Received</div></div></div>
+    <div class="col-6 col-md-3"><div class="stat-card stopped"><div class="stat-value">₹<%= parseFloat(summary.Total_Due||0).toLocaleString('en-IN') %></div><div class="stat-label">Total Outstanding</div></div></div>
+  </div>
+
+  <!-- Bills Table -->
+  <div class="chart-card">
+    <div class="table-responsive">
+      <table class="table table-hover table-sm mb-0">
+        <thead style="background:#f8f9fa;">
+          <tr><th>Bill No</th><th>Date</th><th>Customer</th><th>Job No</th><th class="text-end">Amount</th><th class="text-end">Paid</th><th class="text-end text-danger">Balance</th><th>Status</th><th>Action</th></tr>
+        </thead>
+        <tbody>
+          <% bills.forEach(b=>{ %>
+          <tr>
+            <td><a href="/owner/bills/<%= b.Bill_ID %>" class="fw-bold text-decoration-none text-primary"><%= b.Bill_Number %></a>
+              <% if(b.External_Ref){ %><br><small class="text-muted font-monospace"><%= b.External_Ref %></small><% } %>
+            </td>
+            <td class="small"><%= new Date(b.Bill_Date).toLocaleDateString('en-IN') %></td>
+            <td><strong><%= b.Customer_Name %></strong></td>
+            <td class="small text-muted"><%= b.Job_Number %></td>
+            <td class="text-end">₹<%= parseFloat(b.Net_Amount||0).toLocaleString('en-IN') %></td>
+            <td class="text-end text-success">₹<%= parseFloat(b.Amount_Paid||0).toLocaleString('en-IN') %></td>
+            <td class="text-end fw-bold <%= parseFloat(b.Balance_Due||0)>0?'text-danger':'' %>">₹<%= parseFloat(b.Balance_Due||0).toLocaleString('en-IN') %></td>
+            <td><span class="badge bg-<%= b.Payment_Status==='Paid'?'success':b.Payment_Status==='Partial'?'warning text-dark':b.Payment_Status==='Cancelled'?'dark':'danger' %>"><%= b.Payment_Status %></span></td>
+            <td class="d-flex gap-1">
+              <a href="/owner/bills/<%= b.Bill_ID %>" class="btn btn-xs btn-outline-primary" style="padding:2px 7px;font-size:0.75rem;"><i class="bi bi-eye"></i></a>
+              <% if(b.Payment_Status!='Paid'&&b.Payment_Status!='Cancelled'){ %>
+              <button class="btn btn-xs btn-success" style="padding:2px 7px;font-size:0.75rem;" data-bs-toggle="modal" data-bs-target="#quickPay<%= b.Bill_ID %>">₹+</button>
+              <% } %>
+            </td>
+          </tr>
+          <!-- Quick Pay Modal -->
+          <% if(b.Payment_Status!='Paid'&&b.Payment_Status!='Cancelled'){ %>
+          <div class="modal fade" id="quickPay<%= b.Bill_ID %>" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content">
+                <div class="modal-header" style="background:#198754;"><h5 class="modal-title text-white fw-bold">Receive Payment — <%= b.Bill_Number %></h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+                <form method="POST" action="/owner/bills/<%= b.Bill_ID %>/pay">
+                  <div class="modal-body">
+                    <div class="row g-2 mb-2 p-2 rounded" style="background:#f0fff4;">
+                      <div class="col-4 text-center"><small class="text-muted">Bill Amount</small><div class="fw-bold">₹<%= parseFloat(b.Net_Amount).toLocaleString('en-IN') %></div></div>
+                      <div class="col-4 text-center"><small class="text-muted">Already Paid</small><div class="fw-bold text-success">₹<%= parseFloat(b.Amount_Paid||0).toLocaleString('en-IN') %></div></div>
+                      <div class="col-4 text-center"><small class="text-muted">Balance Due</small><div class="fw-bold text-danger">₹<%= parseFloat(b.Balance_Due||0).toLocaleString('en-IN') %></div></div>
+                    </div>
+                    <div class="row g-2 mt-1">
+                      <div class="col-6"><label class="form-label fw-bold small">DATE</label><input type="date" name="payment_date" class="form-control" value="<%= new Date().toISOString().split('T')[0] %>"></div>
+                      <div class="col-6"><label class="form-label fw-bold small">AMOUNT (₹) *</label><input type="number" name="amount" class="form-control" value="<%= b.Balance_Due %>" required min="1"></div>
+                      <div class="col-6"><label class="form-label fw-bold small">MODE</label><select name="payment_mode" class="form-select"><option>Cash</option><option>Cheque</option><option>UPI</option><option>NEFT</option><option>RTGS</option></select></div>
+                      <div class="col-6"><label class="form-label fw-bold small">CHEQUE / REF NO</label><input type="text" name="cheque_no" class="form-control" placeholder="Optional"></div>
+                      <div class="col-12"><label class="form-label fw-bold small">NARRATION</label><input type="text" name="narration" class="form-control" placeholder="Cash received..."></div>
+                    </div>
+                  </div>
+                  <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-success fw-bold">💰 Confirm Receipt</button></div>
+                </form>
+              </div>
+            </div>
+          </div>
+          <% } %>
+          <% }) %>
+          <% if(!bills.length){ %><tr><td colspan="9" class="text-center text-muted py-4">No bills found for this period</td></tr><% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- New Bill Modal -->
+<div class="modal fade" id="addBillModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header" style="background:#1a1a2e;"><h5 class="modal-title text-white fw-bold"><i class="bi bi-receipt me-2"></i>Create New Bill</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+      <form method="POST" action="/owner/bills">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label fw-bold small">BILL NUMBER *</label>
+              <input type="text" name="bill_number" class="form-control" required placeholder="e.g. B-2026-0001">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold small">BILL DATE *</label>
+              <input type="date" name="bill_date" class="form-control" value="<%= new Date().toISOString().split('T')[0] %>" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold small">EXTERNAL REF (from other software)</label>
+              <input type="text" name="external_ref" class="form-control" placeholder="Bill no from Tally/Vyapar etc.">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold small">CUSTOMER *</label>
+              <select name="customer_id" class="form-select" id="custSelect" onchange="fillCustomerName(this)">
+                <option value="">— Select Customer Master —</option>
+                <% customers.forEach(c=>{ %><option value="<%= c.Customer_ID %>" data-name="<%= c.Customer_Name %>" data-mobile="<%= c.Mobile %>"><%= c.Customer_Name %></option><% }) %>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-bold small">CUSTOMER NAME (if not in master)</label>
+              <input type="text" name="customer_name" id="custName" class="form-control" placeholder="Or type name directly" required>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-bold small">MOBILE</label>
+              <input type="text" name="mobile" id="custMobile" class="form-control" placeholder="Mobile">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold small">LINK TO JOB</label>
+              <select name="job_id" class="form-select">
+                <option value="">— No Job Link —</option>
+                <% jobs.forEach(j=>{ %><option value="<%= j.Job_ID %>"><%= j.Job_Number %> — <%= j.Customer_Name %></option><% }) %>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label fw-bold small">GROSS AMT (₹)</label>
+              <input type="number" name="gross_amount" class="form-control" placeholder="0" step="0.01" id="grossAmt" oninput="calcNet()">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label fw-bold small">DISCOUNT (₹)</label>
+              <input type="number" name="discount_amt" class="form-control" placeholder="0" step="0.01" id="discAmt" oninput="calcNet()">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label fw-bold small">TAX (₹)</label>
+              <input type="number" name="tax_amount" class="form-control" placeholder="0" step="0.01" id="taxAmt" oninput="calcNet()">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label fw-bold small">NET AMOUNT (₹) *</label>
+              <input type="number" name="net_amount" id="netAmt" class="form-control fw-bold" required step="0.01" style="border:2px solid #198754;">
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-bold small">NOTES / DESCRIPTION</label>
+              <textarea name="notes" class="form-control" rows="2" placeholder="Label details, job description..."></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary fw-bold"><i class="bi bi-check-lg me-1"></i>Create Bill</button></div>
+      </form>
+    </div>
+  </div>
+</div>
+<script>
+function fillCustomerName(sel){
+  const opt = sel.options[sel.selectedIndex];
+  if(opt.value){
+    document.getElementById('custName').value   = opt.dataset.name||'';
+    document.getElementById('custMobile').value = opt.dataset.mobile||'';
+  }
+}
+function calcNet(){
+  const g = parseFloat(document.getElementById('grossAmt').value)||0;
+  const d = parseFloat(document.getElementById('discAmt').value)||0;
+  const t = parseFloat(document.getElementById('taxAmt').value)||0;
+  if(g>0) document.getElementById('netAmt').value = (g - d + t).toFixed(2);
+}
+</script>
+<%- include('../partials/footer') %>

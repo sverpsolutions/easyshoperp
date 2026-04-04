@@ -1,0 +1,247 @@
+<%- include('../partials/header') %>
+<div class="container-fluid p-3">
+  <div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
+    <a href="/owner/customers" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i></a>
+    <h5 class="mb-0 fw-bold" style="color:#1a1a2e;"><i class="bi bi-building me-2 text-info"></i><%= customer.Customer_Name %></h5>
+    <span class="badge bg-primary"><%= customer.Category %></span>
+    <% if(parseFloat(customer.Current_Balance||0)>0){ %>
+      <span class="badge bg-danger fs-6">Outstanding: ₹<%= parseFloat(customer.Current_Balance).toLocaleString('en-IN') %> Dr</span>
+    <% } else if(parseFloat(customer.Current_Balance||0)<0){ %>
+      <span class="badge bg-success fs-6">Advance: ₹<%= Math.abs(parseFloat(customer.Current_Balance)).toLocaleString('en-IN') %> Cr</span>
+    <% } else { %>
+      <span class="badge bg-success fs-6">Cleared ✓</span>
+    <% } %>
+    <div class="ms-auto d-flex gap-2">
+      <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#paymentModal"><i class="bi bi-cash me-1"></i>Add Payment</button>
+      <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#editModal"><i class="bi bi-pencil me-1"></i>Edit</button>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <!-- Profile Card -->
+    <div class="col-md-4">
+      <div class="chart-card h-100">
+        <h6 class="fw-bold mb-3" style="color:#1a73e8;"><i class="bi bi-person-badge me-1"></i>Profile</h6>
+        <div class="detail-group">
+          <div class="detail-item"><span>Mobile</span><strong><%= customer.Mobile %></strong></div>
+          <% if(customer.Alt_Mobile){ %><div class="detail-item"><span>Alt Mobile</span><strong><%= customer.Alt_Mobile %></strong></div><% } %>
+          <div class="detail-item"><span>City</span><strong><%= customer.City||'—' %></strong></div>
+          <div class="detail-item"><span>GST No</span><strong class="font-monospace"><%= customer.GST_No||'—' %></strong></div>
+          <div class="detail-item"><span>Credit Limit</span><strong>₹<%= parseFloat(customer.Credit_Limit||0).toLocaleString('en-IN') %></strong></div>
+          <div class="detail-item"><span>Total Jobs</span><strong><%= jobs.length %></strong></div>
+          <div class="detail-item"><span>Total Billed</span><strong>₹<%= bills.reduce((s,b)=>s+parseFloat(b.Net_Amount||0),0).toLocaleString('en-IN') %></strong></div>
+        </div>
+        <% if(customer.Address){ %><div class="mt-2 p-2 bg-light rounded small text-muted"><i class="bi bi-geo-alt me-1"></i><%= customer.Address %></div><% } %>
+        <% if(customer.Notes){ %><div class="mt-2 p-2 rounded small" style="background:#fffbf0;border-left:3px solid #f59e0b;"><%= customer.Notes %></div><% } %>
+      </div>
+    </div>
+
+    <!-- Ledger -->
+    <div class="col-md-8">
+      <div class="chart-card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h6 class="fw-bold mb-0" style="color:#1a73e8;"><i class="bi bi-journal-text me-1"></i>Account Ledger</h6>
+          <span class="badge bg-<%= parseFloat(customer.Current_Balance||0)>0?'danger':'success' %> fs-6">
+            Balance: ₹<%= Math.abs(parseFloat(customer.Current_Balance||0)).toLocaleString('en-IN') %>
+            <%= parseFloat(customer.Current_Balance||0)>0?'Dr':'Cr' %>
+          </span>
+        </div>
+        <div class="table-responsive" style="max-height:300px;overflow-y:auto;">
+          <table class="table table-sm table-hover">
+            <thead style="position:sticky;top:0;background:#f8f9fa;z-index:1;">
+              <tr><th>Date</th><th>Type</th><th>Narration</th><th>Mode</th><th class="text-end">Amount</th><th class="text-end">Balance</th></tr>
+            </thead>
+            <tbody>
+              <% if(parseFloat(customer.Opening_Balance||0)>0){ %>
+              <tr class="table-light"><td colspan="3"><small class="text-muted">Opening Balance</small></td><td></td>
+                <td class="text-end text-danger fw-bold">₹<%= parseFloat(customer.Opening_Balance).toLocaleString('en-IN') %></td><td></td></tr>
+              <% } %>
+              <% payments.forEach(p => { %>
+              <tr>
+                <td class="small"><%= new Date(p.Payment_Date).toLocaleDateString('en-IN') %></td>
+                <td><span class="badge <%= p.Payment_Type==='Receipt'?'bg-success':'bg-warning text-dark' %>"><%= p.Payment_Type %></span></td>
+                <td class="small"><%= p.Narration||'—' %></td>
+                <td class="small"><%= p.Payment_Mode %></td>
+                <td class="text-end fw-bold <%= p.Payment_Type==='Receipt'?'text-success':'text-danger' %>">
+                  <%= p.Payment_Type==='Receipt'?'−':'+'%>₹<%= parseFloat(p.Amount).toLocaleString('en-IN') %>
+                </td>
+                <td class="text-end small"><%= p.Balance_After!=null?'₹'+parseFloat(p.Balance_After).toLocaleString('en-IN'):'—' %></td>
+              </tr>
+              <% }) %>
+              <% if(!payments.length){ %><tr><td colspan="6" class="text-center text-muted py-3">No transactions yet</td></tr><% } %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Jobs -->
+    <div class="col-12">
+      <div class="chart-card">
+        <h6 class="fw-bold mb-3" style="color:#1a73e8;"><i class="bi bi-list-check me-1"></i>Jobs (<%= jobs.length %>)</h6>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover">
+            <thead style="background:#f8f9fa;"><tr><th>Job No</th><th>Status</th><th>Machine</th><th>Operator</th><th>Required</th><th>Produced</th><th>Bill Status</th><th>Start</th></tr></thead>
+            <tbody>
+              <% jobs.forEach(j => { %>
+              <tr>
+                <td class="fw-bold text-primary"><%= j.Job_Number %></td>
+                <td><span class="badge bg-<%= j.Status==='Completed'?'success':j.Status==='Running'?'primary':j.Status==='Dispatched'?'dark':'secondary' %>"><%= j.Status %></span></td>
+                <td class="small"><%= j.Machine_Name %></td>
+                <td class="small"><%= j.Operator_Name %></td>
+                <td class="text-end"><%= parseInt(j.Required_Qty||0).toLocaleString('en-IN') %></td>
+                <td class="text-end"><%= parseInt(j.Produced_Qty||0).toLocaleString('en-IN') %></td>
+                <td><span class="badge bg-<%= j.Bill_Status==='Paid'?'success':j.Bill_Status==='Billed'?'warning text-dark':j.Bill_Status==='Partial'?'info':'secondary' %>"><%= j.Bill_Status||'Not Billed' %></span></td>
+                <td class="small text-muted"><%= j.Start_Time?new Date(j.Start_Time).toLocaleDateString('en-IN'):'—' %></td>
+              </tr>
+              <% }) %>
+              <% if(!jobs.length){ %><tr><td colspan="8" class="text-center text-muted py-3">No jobs yet</td></tr><% } %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bills -->
+    <div class="col-12">
+      <div class="chart-card">
+        <h6 class="fw-bold mb-3" style="color:#1a73e8;"><i class="bi bi-receipt me-1"></i>Bills (<%= bills.length %>)</h6>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover">
+            <thead style="background:#f8f9fa;"><tr><th>Bill No</th><th>Date</th><th>Amount</th><th>Paid</th><th>Balance</th><th>Status</th></tr></thead>
+            <tbody>
+              <% bills.forEach(b => { %>
+              <tr onclick="location.href='/owner/bills/<%= b.Bill_ID %>'" style="cursor:pointer;">
+                <td class="fw-bold text-primary"><%= b.Bill_Number %></td>
+                <td class="small"><%= new Date(b.Bill_Date).toLocaleDateString('en-IN') %></td>
+                <td class="text-end">₹<%= parseFloat(b.Net_Amount||0).toLocaleString('en-IN') %></td>
+                <td class="text-end text-success">₹<%= parseFloat(b.Amount_Paid||0).toLocaleString('en-IN') %></td>
+                <td class="text-end text-danger fw-bold">₹<%= parseFloat(b.Balance_Due||0).toLocaleString('en-IN') %></td>
+                <td><span class="badge bg-<%= b.Payment_Status==='Paid'?'success':b.Payment_Status==='Partial'?'warning text-dark':b.Payment_Status==='Cancelled'?'dark':'danger' %>"><%= b.Payment_Status %></span></td>
+              </tr>
+              <% }) %>
+              <% if(!bills.length){ %><tr><td colspan="6" class="text-center text-muted py-3">No bills yet</td></tr><% } %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Payment Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header" style="background:#198754;"><h5 class="modal-title text-white fw-bold"><i class="bi bi-cash me-2"></i>Record Payment</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+      <form method="POST" action="/owner/customers/<%= customer.Customer_ID %>/payment">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-6"><label class="form-label fw-bold small">DATE</label><input type="date" name="payment_date" class="form-control" value="<%= new Date().toISOString().split('T')[0] %>" required></div>
+            <div class="col-6"><label class="form-label fw-bold small">TYPE</label>
+              <select name="payment_type" class="form-select">
+                <option value="Receipt">Receipt (Customer Pays)</option>
+                <option value="Payment">Payment (We Pay Customer)</option>
+                <option value="Adjustment">Adjustment</option>
+              </select>
+            </div>
+            <div class="col-6"><label class="form-label fw-bold small">AMOUNT (₹) *</label><input type="number" name="amount" class="form-control" required min="1" placeholder="0.00"></div>
+            <div class="col-6"><label class="form-label fw-bold small">MODE</label>
+              <select name="payment_mode" class="form-select"><option>Cash</option><option>Cheque</option><option>UPI</option><option>NEFT</option><option>RTGS</option></select>
+            </div>
+            <div class="col-6"><label class="form-label fw-bold small">CHEQUE / REF NO</label><input type="text" name="cheque_no" class="form-control" placeholder="Optional"></div>
+            <div class="col-6"><label class="form-label fw-bold small">AGAINST BILL</label>
+              <select name="bill_id" class="form-select">
+                <option value="">— General Payment —</option>
+                <% bills.filter(b=>b.Payment_Status!='Paid'&&b.Payment_Status!='Cancelled').forEach(b=>{ %>
+                <option value="<%= b.Bill_ID %>"><%= b.Bill_Number %> (Due: ₹<%= parseFloat(b.Balance_Due).toLocaleString('en-IN') %>)</option>
+                <% }) %>
+              </select>
+            </div>
+            <div class="col-12"><label class="form-label fw-bold small">NARRATION</label><input type="text" name="narration" class="form-control" placeholder="e.g. Cash received against Job J-2026-0001"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success fw-bold"><i class="bi bi-check-lg me-1"></i>Save Payment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header" style="background:#1a1a2e;"><h5 class="modal-title text-white fw-bold">Edit Customer</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+      <form method="POST" action="/owner/customers/<%= customer.Customer_ID %>/update">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6"><label class="form-label fw-bold small">NAME *</label><input type="text" name="customer_name" class="form-control" value="<%= customer.Customer_Name %>" required></div>
+            <div class="col-md-3"><label class="form-label fw-bold small">MOBILE *</label><input type="text" name="mobile" class="form-control" value="<%= customer.Mobile %>" required></div>
+            <div class="col-md-3"><label class="form-label fw-bold small">ALT MOBILE</label><input type="text" name="alt_mobile" class="form-control" value="<%= customer.Alt_Mobile||'' %>"></div>
+            <div class="col-md-6"><label class="form-label fw-bold small">ADDRESS</label><input type="text" name="address" class="form-control" value="<%= customer.Address||'' %>"></div>
+            <div class="col-md-3"><label class="form-label fw-bold small">CITY</label><input type="text" name="city" class="form-control" value="<%= customer.City||'' %>"></div>
+            <div class="col-md-3"><label class="form-label fw-bold small">CATEGORY</label>
+              <select name="category" class="form-select">
+                <% ['Regular','Wholesale','Retail','Corporate'].forEach(c=>{ %><option <%= c===customer.Category?'selected':'' %>><%= c %></option><% }) %>
+              </select>
+            </div>
+            <div class="col-md-4"><label class="form-label fw-bold small">GST No</label><input type="text" name="gst_no" class="form-control" value="<%= customer.GST_No||'' %>"></div>
+            <div class="col-md-4"><label class="form-label fw-bold small">CREDIT LIMIT (₹)</label><input type="number" name="credit_limit" class="form-control" value="<%= customer.Credit_Limit||0 %>"></div>
+            <div class="col-12"><label class="form-label fw-bold small">NOTES</label><textarea name="notes" class="form-control" rows="2"><%= customer.Notes||'' %></textarea></div>
+          </div>
+        </div>
+        <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary">Save Changes</button></div>
+      </form>
+    </div>
+  </div>
+</div>
+
+  <!-- ── CUSTOMER PORTAL ACCESS ── -->
+  <div class="chart-card mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h6 class="fw-bold mb-0" style="color:#6f42c1;"><i class="bi bi-phone me-2"></i>Customer Portal Access</h6>
+      <span class="badge <%= customer.Portal_Active ? 'bg-success' : 'bg-secondary' %>">
+        <%= customer.Portal_Active ? '🔓 ENABLED' : '🔒 DISABLED' %>
+      </span>
+    </div>
+    <% if(customer.Portal_Active){ %>
+    <div class="alert alert-success py-2 small mb-3">
+      <i class="bi bi-check-circle me-1"></i>
+      Customer can log in at: <strong><a href="/portal/login" target="_blank">/portal/login</a></strong>
+      using username: <strong><%= customer.Portal_Username %></strong>
+    </div>
+    <% } %>
+    <form method="POST" action="/owner/customers/<%= customer.Customer_ID %>/portal-setup">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label fw-bold small">Portal Username</label>
+          <input type="text" name="portal_username" class="form-control"
+            value="<%= customer.Portal_Username || '' %>"
+            placeholder="e.g. rahul123 (no spaces)"
+            pattern="[A-Za-z0-9_]+" title="Letters, numbers and underscore only">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label fw-bold small">New Password <span class="text-muted">(leave blank to keep)</span></label>
+          <input type="text" name="portal_password" class="form-control" placeholder="Min 6 characters">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label fw-bold small">Portal Status</label>
+          <select name="portal_active" class="form-select">
+            <option value="1" <%= customer.Portal_Active ? 'selected' : '' %>>✅ Enable Access</option>
+            <option value="0" <%= !customer.Portal_Active ? 'selected' : '' %>>🔒 Disable Access</option>
+          </select>
+        </div>
+      </div>
+      <button type="submit" class="btn mt-3" style="background:#6f42c1;color:white;font-weight:700;">
+        <i class="bi bi-phone me-1"></i>Save Portal Settings
+      </button>
+      <div class="text-muted small mt-2">
+        <i class="bi bi-info-circle me-1"></i>Customer portal URL: <strong>http://YOUR-SERVER:3000/portal/login</strong>
+      </div>
+    </form>
+  </div>
+
+<%- include('../partials/footer') %>

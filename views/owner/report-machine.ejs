@@ -1,0 +1,57 @@
+<%- include('../partials/header') %>
+
+<div class="container-fluid p-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="fw-bold mb-0" style="color:#1a1a2e;">
+      <i class="bi bi-cpu-fill me-2" style="color:#f59e0b;"></i>MACHINE UTILIZATION REPORT
+    </h5>
+    <a href="/owner/reports" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Back</a>
+  </div>
+
+  <form class="chart-card mb-3" method="GET">
+    <div class="row g-2 align-items-end">
+      <div class="col-md-3"><label class="form-label fw-bold small">FROM</label><input type="date" name="from" value="<%= from %>" class="form-control"></div>
+      <div class="col-md-3"><label class="form-label fw-bold small">TO</label><input type="date" name="to" value="<%= to %>" class="form-control"></div>
+      <div class="col-md-2"><button type="submit" class="btn btn-primary w-100"><i class="bi bi-search me-1"></i>Filter</button></div>
+    </div>
+  </form>
+
+  <div class="chart-card p-0">
+    <div class="table-responsive">
+      <table class="table table-hover table-sm mb-0 align-middle">
+        <thead style="background:#f8f9fa;">
+          <tr style="font-size:0.72rem; text-transform:uppercase; color:#6c757d;">
+            <th class="ps-3">Machine</th>
+            <th>Type</th>
+            <th class="text-center">Jobs Run</th>
+            <th class="text-end">Run Minutes</th>
+            <th style="width:200px;">Efficiency</th>
+          </tr>
+        </thead>
+        <tbody style="font-size:0.85rem;">
+          <% rows.forEach(r => { %>
+          <tr>
+            <td class="ps-3 fw-bold" style="color:#1a1a2e;"><%= r.Machine_Name %></td>
+            <td><span class="badge <%= r.Machine_Type==='Auto'?'bg-primary':'bg-secondary' %>"><%= r.Machine_Type %></span></td>
+            <td class="text-center"><%= r.Jobs_Run||0 %></td>
+            <td class="text-end text-muted"><%= Number(r.Run_Minutes||0).toLocaleString() %></td>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <div class="progress flex-fill" style="height:10px; border-radius:5px;">
+                  <div class="progress-bar <%= r.Efficiency_Pct>=70?'bg-success':r.Efficiency_Pct>=40?'bg-warning':'bg-danger' %>"
+                       style="width:<%= Math.min(100,r.Efficiency_Pct||0) %>%; border-radius:5px;"></div>
+                </div>
+                <span class="fw-bold" style="width:45px; font-size:0.8rem;"><%= r.Efficiency_Pct||0 %>%</span>
+              </div>
+            </td>
+          </tr>
+          <% }) %>
+          <% if(!rows.length) { %>
+          <tr><td colspan="5" class="text-center text-muted py-5">No data for selected period</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<%- include('../partials/footer') %>

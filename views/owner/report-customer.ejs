@@ -1,0 +1,98 @@
+<%- include('../partials/header') %>
+<% function fmtQty(n){ return Number(n||0).toLocaleString(); }
+   function fmtDate(d){ return d ? new Date(d).toLocaleDateString('en-IN') : '—'; } %>
+
+<div class="container-fluid p-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="fw-bold mb-0" style="color:#1a1a2e;">
+      <i class="bi bi-building me-2" style="color:#0dcaf0;"></i>CUSTOMER HISTORY
+    </h5>
+    <a href="/owner/reports" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Back</a>
+  </div>
+
+  <!-- Customer selector -->
+  <form class="chart-card mb-3" method="GET">
+    <div class="row g-2 align-items-end">
+      <div class="col-md-5">
+        <label class="form-label fw-bold small">SELECT CUSTOMER</label>
+        <select name="customer" class="form-select" onchange="this.form.submit()">
+          <option value="">— Select a customer —</option>
+          <% customers.forEach(c => { %>
+          <option value="<%= c.Customer_Name %>" <%= selectedCustomer===c.Customer_Name?'selected':'' %>>
+            <%= c.Customer_Name %>
+          </option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search me-1"></i>View</button>
+      </div>
+    </div>
+  </form>
+
+  <% if (selectedCustomer && summary) { %>
+  <!-- Summary Cards -->
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-md-3"><div class="stat-card operators"><div class="stat-value"><%= summary.Total_Jobs %></div><div class="stat-label">Total Orders</div></div></div>
+    <div class="col-6 col-md-3"><div class="stat-card running"><div class="stat-value"><%= summary.Completed %></div><div class="stat-label">Completed</div></div></div>
+    <div class="col-6 col-md-3"><div class="stat-card production"><div class="stat-value"><%= fmtQty(summary.Total_Produced) %></div><div class="stat-label">Total Produced</div></div></div>
+    <div class="col-6 col-md-3"><div class="stat-card idle"><div class="stat-value"><%= summary.Avg_Days||0 %> days</div><div class="stat-label">Avg Completion</div></div></div>
+  </div>
+
+  <!-- Job History Table -->
+  <div class="chart-card p-0">
+    <div class="table-responsive">
+      <table class="table table-hover table-sm mb-0 align-middle">
+        <thead style="background:#f8f9fa; position:sticky; top:0;">
+          <tr style="font-size:0.7rem;text-transform:uppercase;color:#6c757d;">
+            <th class="ps-3">Job No</th>
+            <th>Order Date</th>
+            <th>Delivery</th>
+            <th>Size</th>
+            <th>Label</th>
+            <th>Type</th>
+            <th>Paper</th>
+            <th class="text-end">Req Qty</th>
+            <th class="text-end">Produced</th>
+            <th>Status</th>
+            <th>Operator</th>
+            <th class="pe-3">Days</th>
+          </tr>
+        </thead>
+        <tbody style="font-size:0.78rem;">
+          <% jobs.forEach(j => { %>
+          <tr>
+            <td class="ps-3"><strong class="text-primary"><%= j.Job_Number %></strong></td>
+            <td class="text-muted"><%= fmtDate(j.Order_Date) %></td>
+            <td class="text-muted"><%= fmtDate(j.Delivery_Date) %></td>
+            <td><span class="badge bg-light text-dark border"><%= j.Size||'—' %></span></td>
+            <td class="text-muted small"><%= j.Label||'—' %></td>
+            <td><span class="badge <%= j.Label_Type==='Printed'?'bg-primary':'bg-secondary' %>"><%= j.Label_Type %></span></td>
+            <td class="text-muted small"><%= j.Paper||'—' %></td>
+            <td class="text-end"><%= fmtQty(j.Required_Qty) %></td>
+            <td class="text-end text-success fw-bold"><%= fmtQty(j.Produced_Qty) %></td>
+            <td>
+              <span class="badge bg-<%= j.Status==='Completed'?'success':j.Status==='Running'?'success':j.Status==='Pending'?'warning text-dark':j.Status==='Dispatched'?'dark':'secondary' %>">
+                <%= j.Status %>
+              </span>
+            </td>
+            <td class="text-muted small"><%= j.Operator_Name %></td>
+            <td class="pe-3 text-muted small"><%= j.Days_Taken || '—' %></td>
+          </tr>
+          <% }) %>
+          <% if(!jobs.length) { %><tr><td colspan="12" class="text-center py-4 text-muted">No orders found</td></tr><% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <% } else if (selectedCustomer) { %>
+  <div class="alert alert-warning">Customer "<%= selectedCustomer %>" not found.</div>
+  <% } else { %>
+  <div class="chart-card text-center py-5">
+    <i class="bi bi-building fs-1 text-muted d-block mb-2"></i>
+    <p class="text-muted">Select a customer above to view their complete order history</p>
+  </div>
+  <% } %>
+</div>
+<%- include('../partials/footer') %>

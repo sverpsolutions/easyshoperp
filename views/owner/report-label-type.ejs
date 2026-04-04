@@ -1,0 +1,99 @@
+<%- include('../partials/header') %>
+<% function fmtQty(n){ return Number(n||0).toLocaleString(); } %>
+
+<div class="container-fluid p-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="fw-bold mb-0" style="color:#1a1a2e;">
+      <i class="bi bi-tag-fill me-2" style="color:#1a73e8;"></i>LABEL TYPE SUMMARY
+    </h5>
+    <a href="/owner/reports" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Back</a>
+  </div>
+
+  <form class="chart-card mb-3" method="GET">
+    <div class="row g-2 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label fw-bold small">FROM</label>
+        <input type="date" name="from" value="<%= from %>" class="form-control">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label fw-bold small">TO</label>
+        <input type="date" name="to" value="<%= to %>" class="form-control">
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search me-1"></i>Filter</button>
+      </div>
+    </div>
+  </form>
+
+  <!-- Summary cards -->
+  <div class="row g-3 mb-3">
+    <% const totalJobs = rows.reduce((s,r)=>s+(r.Total_Jobs||0),0);
+       const totalReq  = rows.reduce((s,r)=>s+(r.Total_Required||0),0);
+       const totalProd = rows.reduce((s,r)=>s+(r.Total_Produced||0),0); %>
+    <div class="col-6 col-md-3"><div class="stat-card production"><div class="stat-value"><%= fmtQty(totalReq) %></div><div class="stat-label">Total Required</div></div></div>
+    <div class="col-6 col-md-3"><div class="stat-card running"><div class="stat-value"><%= fmtQty(totalProd) %></div><div class="stat-label">Total Produced</div></div></div>
+    <div class="col-6 col-md-3"><div class="stat-card operators"><div class="stat-value"><%= totalJobs %></div><div class="stat-label">Total Jobs</div></div></div>
+    <div class="col-6 col-md-3"><div class="stat-card idle"><div class="stat-value"><%= totalReq>0?Math.round(totalProd*100/totalReq):0 %>%</div><div class="stat-label">Overall Completion</div></div></div>
+  </div>
+
+  <!-- Chart + Table -->
+  <div class="row g-3">
+    <div class="col-md-5">
+      <div class="chart-card">
+        <h6 class="fw-bold mb-3" style="color:#1a1a2e;">Production by Label Type</h6>
+        <canvas id="ltChart" height="220"></canvas>
+      </div>
+    </div>
+    <div class="col-md-7">
+      <div class="chart-card p-0">
+        <div class="table-responsive">
+          <table class="table table-hover table-sm mb-0 align-middle">
+            <thead style="background:#f8f9fa;">
+              <tr style="font-size:0.72rem;text-transform:uppercase;color:#6c757d;">
+                <th class="ps-3">Label Type</th>
+                <th class="text-center">Jobs</th>
+                <th class="text-center">Completed</th>
+                <th class="text-end">Required Qty</th>
+                <th class="text-end">Produced Qty</th>
+                <th class="text-end pe-3">Pending Qty</th>
+              </tr>
+            </thead>
+            <tbody style="font-size:0.82rem;">
+              <% rows.forEach(r => {
+                const pct = r.Total_Required>0 ? Math.round(r.Total_Produced*100/r.Total_Required) : 0; %>
+              <tr>
+                <td class="ps-3">
+                  <span class="badge <%= r.Label_Type==='Printed'?'bg-primary':'bg-secondary' %> me-2"><%= r.Label_Type %></span>
+                  <div class="progress mt-1" style="height:4px;width:80px;display:inline-flex;vertical-align:middle;">
+                    <div class="progress-bar bg-success" style="width:<%= pct %>%"></div>
+                  </div>
+                  <span class="text-muted ms-1" style="font-size:0.65rem;"><%= pct %>%</span>
+                </td>
+                <td class="text-center fw-bold"><%= r.Total_Jobs %></td>
+                <td class="text-center text-success"><%= r.Completed_Jobs||0 %></td>
+                <td class="text-end"><%= fmtQty(r.Total_Required) %></td>
+                <td class="text-end text-success fw-bold"><%= fmtQty(r.Total_Produced) %></td>
+                <td class="text-end text-danger pe-3"><%= fmtQty(r.Pending_Qty) %></td>
+              </tr>
+              <% }) %>
+              <% if(!rows.length) { %><tr><td colspan="6" class="text-center py-4 text-muted">No data</td></tr><% } %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const ltData = <%- JSON.stringify(rows) %>;
+new Chart(document.getElementById('ltChart').getContext('2d'), {
+  type:'doughnut',
+  data:{
+    labels: ltData.map(r=>r.Label_Type),
+    datasets:[{ data:ltData.map(r=>r.Total_Produced), backgroundColor:['#1a73e8','#6f42c1','#28a745','#fd7e14','#dc3545'], borderWidth:2, borderColor:'#fff' }]
+  },
+  options:{ plugins:{ legend:{ position:'bottom', labels:{color:'#495057',boxWidth:14} } } }
+});
+</script>
+<%- include('../partials/footer') %>

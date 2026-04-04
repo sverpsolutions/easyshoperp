@@ -1,0 +1,61 @@
+<%- include('../partials/header') %>
+<% function fmtQty(n){ return Number(n||0).toLocaleString(); } %>
+
+<div class="container-fluid p-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="fw-bold mb-0" style="color:#1a1a2e;">
+      <i class="bi bi-people-fill me-2" style="color:#20c997;"></i>OPERATOR PRODUCTIVITY REPORT
+    </h5>
+    <a href="/owner/reports" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Back</a>
+  </div>
+
+  <form class="chart-card mb-3" method="GET">
+    <div class="row g-2 align-items-end">
+      <div class="col-md-3"><label class="form-label fw-bold small">FROM</label><input type="date" name="from" value="<%= from %>" class="form-control"></div>
+      <div class="col-md-3"><label class="form-label fw-bold small">TO</label><input type="date" name="to" value="<%= to %>" class="form-control"></div>
+      <div class="col-md-2"><button type="submit" class="btn btn-primary w-100"><i class="bi bi-search me-1"></i>Filter</button></div>
+    </div>
+  </form>
+
+  <% const topProd = rows.reduce((mx,r)=>Math.max(mx,r.Total_Produced||0),1); %>
+  <div class="chart-card p-0">
+    <div class="table-responsive">
+      <table class="table table-hover table-sm mb-0 align-middle">
+        <thead style="background:#f8f9fa;">
+          <tr style="font-size:0.72rem; text-transform:uppercase; color:#6c757d;">
+            <th class="ps-3">#</th>
+            <th>Operator</th>
+            <th class="text-center">Jobs Handled</th>
+            <th class="text-end">Total Produced</th>
+            <th class="text-end pe-3">Hours Worked</th>
+          </tr>
+        </thead>
+        <tbody style="font-size:0.85rem;">
+          <% rows.forEach((r,i) => { const barW = Math.round((r.Total_Produced||0)*100/topProd); %>
+          <tr>
+            <td class="ps-3">
+              <% if(i===0){ %><span class="badge bg-warning text-dark">🥇 1</span>
+              <% } else if(i===1){ %><span class="badge bg-secondary">🥈 2</span>
+              <% } else if(i===2){ %><span class="badge bg-warning text-dark" style="background:#cd7f32!important;">🥉 3</span>
+              <% } else { %><span class="text-muted"><%= i+1 %></span><% } %>
+            </td>
+            <td>
+              <div class="fw-bold" style="color:#1a1a2e;"><%= r.Operator_Name %></div>
+              <div class="progress mt-1" style="height:4px; width:120px;">
+                <div class="progress-bar bg-success" style="width:<%= barW %>%"></div>
+              </div>
+            </td>
+            <td class="text-center"><%= r.Jobs_Handled||0 %></td>
+            <td class="text-end text-success fw-bold"><%= fmtQty(r.Total_Produced) %></td>
+            <td class="text-end text-muted pe-3"><%= parseFloat(r.Hours_Worked||0).toFixed(1) %> h</td>
+          </tr>
+          <% }) %>
+          <% if(!rows.length) { %>
+          <tr><td colspan="5" class="text-center text-muted py-5">No data for selected period</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<%- include('../partials/footer') %>

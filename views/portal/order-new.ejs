@@ -1,0 +1,157 @@
+<%- include('_head') %>
+
+<div class="topbar">
+  <a href="/portal/orders" class="topbar-icon" style="text-decoration:none;"><i class="bi bi-arrow-left"></i></a>
+  <div class="topbar-title">Place New Order</div>
+  <div class="topbar-icon"></div>
+</div>
+
+<div class="page-pad">
+
+  <% if(error){ %>
+  <div style="background:#fee2e2;border:1.5px solid #fca5a5;border-radius:12px;padding:12px 14px;color:#dc2626;font-size:0.85rem;margin-bottom:16px;display:flex;gap:8px;align-items:center;">
+    <i class="bi bi-exclamation-triangle-fill"></i><span><%= error %></span>
+  </div>
+  <% } %>
+
+  <form method="POST" action="/portal/order/new" enctype="multipart/form-data" autocomplete="off">
+
+    <!-- Label Details -->
+    <div class="card-m">
+      <div style="font-weight:700;font-size:0.9rem;color:#0f172a;margin-bottom:14px;"><i class="bi bi-tag me-2" style="color:#f59e0b;"></i>Label Details</div>
+
+      <div class="form-group">
+        <label>Label Name / Product *</label>
+        <input type="text" name="label_name" placeholder="e.g. Shampoo Label, Price Tag..." required>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="form-group">
+          <label>Label Type</label>
+          <select name="label_type">
+            <option>Plain</option>
+            <option>Thermal</option>
+            <option>Barcode</option>
+            <option>Color Print</option>
+            <option>Hologram</option>
+            <option>Transparent</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Size (mm)</label>
+          <input type="text" name="size" placeholder="e.g. 50x30">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Quantity (Pieces) *</label>
+        <input type="number" name="quantity" placeholder="e.g. 10000" min="1" required inputmode="numeric">
+      </div>
+    </div>
+
+    <!-- Material Specs -->
+    <div class="card-m">
+      <div style="font-weight:700;font-size:0.9rem;color:#0f172a;margin-bottom:14px;"><i class="bi bi-layers me-2" style="color:#3b82f6;"></i>Material Specs</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="form-group">
+          <label>Paper / Material</label>
+          <select name="paper">
+            <option value="">-- Select --</option>
+            <option>Art Paper</option>
+            <option>BOPP</option>
+            <option>PP</option>
+            <option>PET</option>
+            <option>Thermal</option>
+            <option>Kraft</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Core Size</label>
+          <select name="core">
+            <option value="">-- Select --</option>
+            <option>1 inch</option>
+            <option>1.5 inch</option>
+            <option>3 inch</option>
+            <option>76mm</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Packing</label>
+        <select name="packing">
+          <option value="">-- Select --</option>
+          <option>Roll</option>
+          <option>Sheet</option>
+          <option>Box</option>
+          <option>Fanfold</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Delivery -->
+    <div class="card-m">
+      <div style="font-weight:700;font-size:0.9rem;color:#0f172a;margin-bottom:14px;"><i class="bi bi-truck me-2" style="color:#22c55e;"></i>Delivery</div>
+
+      <div class="form-group">
+        <label>Required By Date</label>
+        <input type="date" name="required_by" min="<%= new Date().toISOString().split('T')[0] %>">
+      </div>
+
+      <div class="form-group">
+        <label>Delivery Address</label>
+        <textarea name="delivery_address" placeholder="Leave blank to use registered address"></textarea>
+      </div>
+    </div>
+
+    <!-- Artwork Upload -->
+    <div class="card-m">
+      <div style="font-weight:700;font-size:0.9rem;color:#0f172a;margin-bottom:14px;"><i class="bi bi-image me-2" style="color:#8b5cf6;"></i>Artwork / Design</div>
+      <div style="color:#64748b;font-size:0.8rem;margin-bottom:12px;">Upload your label design (PDF, JPG, PNG — max 5MB)</div>
+
+      <label style="display:block;border:2px dashed #e2e8f0;border-radius:14px;padding:24px;text-align:center;cursor:pointer;background:#f8fafc;" id="artLabel">
+        <i class="bi bi-cloud-arrow-up" style="font-size:2rem;color:#94a3b8;display:block;margin-bottom:8px;"></i>
+        <span id="artText" style="color:#64748b;font-size:0.85rem;">Tap to upload artwork</span>
+        <input type="file" name="artwork" id="artInput" accept=".pdf,.jpg,.jpeg,.png" style="display:none;" onchange="updateArtLabel(this)">
+      </label>
+    </div>
+
+    <!-- Notes -->
+    <div class="card-m">
+      <div class="form-group" style="margin-bottom:0;">
+        <label><i class="bi bi-chat-left-text me-1"></i> Special Instructions</label>
+        <textarea name="notes" placeholder="Any special requirements, references, or notes..."></textarea>
+      </div>
+    </div>
+
+    <button type="submit" class="btn-primary-m" style="margin-top:4px;">
+      <i class="bi bi-send me-2"></i>Submit Order Request
+    </button>
+    <div style="text-align:center;color:#94a3b8;font-size:0.75rem;margin-top:10px;">
+      Our team will review and confirm within 24 hours
+    </div>
+  </form>
+</div>
+
+<nav class="bottomnav">
+  <a href="/portal/dashboard" class="nav-item"><i class="bi bi-house-fill"></i>Home</a>
+  <a href="/portal/orders"    class="nav-item active"><i class="bi bi-bag"></i>Orders</a>
+  <a href="/portal/jobs"      class="nav-item"><i class="bi bi-gear"></i>Jobs</a>
+  <a href="/portal/bills"     class="nav-item"><i class="bi bi-receipt"></i>Bills</a>
+  <a href="/portal/profile"   class="nav-item"><i class="bi bi-person"></i>Profile</a>
+</nav>
+
+<script>
+function updateArtLabel(input){
+  const label = document.getElementById('artText');
+  if(input.files[0]){
+    label.textContent = '✅ ' + input.files[0].name;
+    label.style.color = '#16a34a';
+    document.getElementById('artLabel').style.borderColor = '#22c55e';
+  }
+}
+</script>
+</body></html>

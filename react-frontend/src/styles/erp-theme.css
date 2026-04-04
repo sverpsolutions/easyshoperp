@@ -1,0 +1,568 @@
+/* ═══════════════════════════════════════════════════════════════
+   ERP MASTER THEME — Barcode MES v5
+   Modern ERP look with Bootstrap 5 base
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── CSS Variables ─────────────────────────────────────────── */
+:root {
+  --erp-primary:      #2563eb;
+  --erp-primary-light:#dbeafe;
+  --erp-success:      #16a34a;
+  --erp-danger:       #dc2626;
+  --erp-warning:      #d97706;
+  --erp-info:         #0891b2;
+  --erp-purple:       #7c3aed;
+  --erp-pink:         #db2777;
+  --erp-bg:           #f1f5f9;
+  --erp-card:         #ffffff;
+  --erp-border:       #e2e8f0;
+  --erp-text:         #1e293b;
+  --erp-muted:        #64748b;
+  --erp-sidebar-bg:   #0f172a;
+  --erp-sidebar-hover:#1e293b;
+  --erp-radius:       10px;
+  --erp-shadow:       0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
+  --erp-shadow-md:    0 4px 6px rgba(0,0,0,.07), 0 10px 30px rgba(0,0,0,.08);
+}
+
+/* ── Page Background ───────────────────────────────────────── */
+body {
+  background: var(--erp-bg) !important;
+  color: var(--erp-text) !important;
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif !important;
+}
+
+/* ── ERP Card ──────────────────────────────────────────────── */
+.erp-card {
+  background: var(--erp-card);
+  border: 1px solid var(--erp-border);
+  border-radius: var(--erp-radius);
+  box-shadow: var(--erp-shadow);
+  padding: 1.5rem;
+}
+
+.erp-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid var(--erp-border);
+}
+
+.erp-card-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--erp-text);
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+
+/* ── Stat Cards ────────────────────────────────────────────── */
+.erp-stat-card {
+  background: var(--erp-card);
+  border-radius: var(--erp-radius);
+  box-shadow: var(--erp-shadow);
+  padding: 1.25rem 1.5rem;
+  border-left: 4px solid var(--erp-primary);
+  transition: transform .15s, box-shadow .15s;
+}
+.erp-stat-card:hover { transform: translateY(-2px); box-shadow: var(--erp-shadow-md); }
+.erp-stat-card .stat-value { font-size: 1.75rem; font-weight: 800; line-height: 1; }
+.erp-stat-card .stat-label { font-size: .78rem; color: var(--erp-muted); text-transform: uppercase; letter-spacing: .04em; margin-top: .25rem; }
+.erp-stat-card.green  { border-color: var(--erp-success); }
+.erp-stat-card.red    { border-color: var(--erp-danger); }
+.erp-stat-card.orange { border-color: var(--erp-warning); }
+.erp-stat-card.purple { border-color: var(--erp-purple); }
+.erp-stat-card.cyan   { border-color: var(--erp-info); }
+
+/* ── Master Page Layout ────────────────────────────────────── */
+.master-page {
+  padding: 1.5rem;
+  min-height: calc(100vh - 56px);
+}
+
+.master-page-header {
+  background: linear-gradient(135deg, var(--erp-primary) 0%, #1d4ed8 100%);
+  border-radius: var(--erp-radius);
+  padding: 1.25rem 1.5rem;
+  color: #fff;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 20px rgba(37,99,235,.3);
+}
+
+.master-page-header .page-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.master-page-header .page-subtitle {
+  font-size: .8rem;
+  opacity: .8;
+  margin-top: .15rem;
+}
+
+/* ── Inputs ERP Style ──────────────────────────────────────── */
+.erp-input {
+  border: 1.5px solid var(--erp-border) !important;
+  border-radius: 8px !important;
+  padding: .5rem .85rem !important;
+  transition: border-color .2s, box-shadow .2s !important;
+  background: #fff !important;
+  font-size: .875rem !important;
+}
+
+.erp-input:focus {
+  border-color: var(--erp-primary) !important;
+  box-shadow: 0 0 0 3px rgba(37,99,235,.15) !important;
+  outline: none !important;
+}
+
+.erp-label {
+  font-size: .78rem;
+  font-weight: 600;
+  color: var(--erp-muted);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  margin-bottom: .3rem;
+}
+
+.erp-input-group-icon {
+  position: relative;
+}
+.erp-input-group-icon .erp-input { padding-left: 2.25rem !important; }
+.erp-input-group-icon .input-icon {
+  position: absolute;
+  left: .7rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--erp-muted);
+  font-size: .95rem;
+  pointer-events: none;
+}
+
+/* ── ERP Buttons ───────────────────────────────────────────── */
+.btn-erp-save {
+  background: linear-gradient(135deg, #16a34a, #15803d);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: .5rem 1.25rem;
+  font-weight: 600;
+  font-size: .875rem;
+  transition: all .15s;
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+}
+.btn-erp-save:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(22,163,74,.35); color: #fff; }
+
+.btn-erp-add {
+  background: linear-gradient(135deg, var(--erp-primary), #1d4ed8);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: .5rem 1.25rem;
+  font-weight: 600;
+  font-size: .875rem;
+  transition: all .15s;
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+}
+.btn-erp-add:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37,99,235,.35); color: #fff; }
+
+.btn-erp-edit {
+  background: #f0f9ff;
+  color: var(--erp-info);
+  border: 1px solid #bae6fd;
+  border-radius: 7px;
+  padding: .3rem .7rem;
+  font-size: .8rem;
+  font-weight: 600;
+  transition: all .12s;
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+}
+.btn-erp-edit:hover { background: var(--erp-info); color: #fff; border-color: var(--erp-info); }
+
+.btn-erp-delete {
+  background: #fff5f5;
+  color: var(--erp-danger);
+  border: 1px solid #fecaca;
+  border-radius: 7px;
+  padding: .3rem .7rem;
+  font-size: .8rem;
+  font-weight: 600;
+  transition: all .12s;
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+}
+.btn-erp-delete:hover { background: var(--erp-danger); color: #fff; border-color: var(--erp-danger); }
+
+/* ── ERP Table ──────────────────────────────────────────────── */
+.erp-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.erp-table thead th {
+  background: #f8fafc;
+  color: var(--erp-muted);
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  padding: .75rem 1rem;
+  border-bottom: 2px solid var(--erp-border);
+  white-space: nowrap;
+}
+
+.erp-table tbody tr {
+  transition: background .1s;
+}
+.erp-table tbody tr:hover { background: #f8fafc; }
+
+.erp-table tbody td {
+  padding: .7rem 1rem;
+  font-size: .875rem;
+  border-bottom: 1px solid var(--erp-border);
+  vertical-align: middle;
+}
+
+.erp-table tbody tr:last-child td { border-bottom: none; }
+
+/* ── ERP Badge ─────────────────────────────────────────────── */
+.erp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  padding: .2rem .65rem;
+  border-radius: 20px;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .03em;
+}
+.erp-badge-blue   { background: #dbeafe; color: #1d4ed8; }
+.erp-badge-green  { background: #dcfce7; color: #15803d; }
+.erp-badge-red    { background: #fee2e2; color: #b91c1c; }
+.erp-badge-yellow { background: #fef9c3; color: #92400e; }
+.erp-badge-purple { background: #ede9fe; color: #6d28d9; }
+.erp-badge-gray   { background: #f1f5f9; color: #475569; }
+.erp-badge-cyan   { background: #cffafe; color: #0e7490; }
+.erp-badge-orange { background: #fff7ed; color: #c2410c; }
+
+/* ── ERP Tabs ──────────────────────────────────────────────── */
+.erp-tabs {
+  display: flex;
+  gap: .25rem;
+  border-bottom: 2px solid var(--erp-border);
+  margin-bottom: 1.5rem;
+  overflow-x: auto;
+}
+
+.erp-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .6rem 1.1rem;
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--erp-muted);
+  border: none;
+  background: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all .15s;
+  border-radius: 6px 6px 0 0;
+}
+
+.erp-tab:hover { color: var(--erp-primary); background: var(--erp-primary-light); }
+
+.erp-tab.active {
+  color: var(--erp-primary);
+  border-bottom-color: var(--erp-primary);
+  background: var(--erp-primary-light);
+}
+
+/* ── ERP Modal ─────────────────────────────────────────────── */
+.erp-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15,23,42,.55);
+  backdrop-filter: blur(2px);
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.erp-modal {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.2);
+  width: 100%;
+  max-height: 92vh;
+  overflow-y: auto;
+  animation: erp-modal-in .15s ease-out;
+}
+
+@keyframes erp-modal-in {
+  from { opacity: 0; transform: scale(.96) translateY(8px); }
+  to   { opacity: 1; transform: scale(1)  translateY(0); }
+}
+
+.erp-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--erp-border);
+  background: linear-gradient(135deg, var(--erp-primary), #1d4ed8);
+  border-radius: 12px 12px 0 0;
+  color: #fff;
+}
+
+.erp-modal-title {
+  font-size: 1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+
+.erp-modal-body  { padding: 1.5rem; }
+.erp-modal-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--erp-border);
+  display: flex;
+  justify-content: flex-end;
+  gap: .75rem;
+  background: #f8fafc;
+  border-radius: 0 0 12px 12px;
+}
+
+/* ── Toast Notifications ───────────────────────────────────── */
+.erp-toast-container {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+
+.erp-toast {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .85rem 1.25rem;
+  border-radius: 10px;
+  box-shadow: 0 8px 30px rgba(0,0,0,.15);
+  font-size: .875rem;
+  font-weight: 600;
+  min-width: 280px;
+  animation: erp-toast-in .2s ease-out;
+}
+
+@keyframes erp-toast-in {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.erp-toast.success { background: #f0fdf4; color: #15803d; border-left: 4px solid #16a34a; }
+.erp-toast.error   { background: #fff5f5; color: #b91c1c; border-left: 4px solid #dc2626; }
+.erp-toast.info    { background: #eff6ff; color: #1d4ed8; border-left: 4px solid #2563eb; }
+.erp-toast.warning { background: #fffbeb; color: #92400e; border-left: 4px solid #d97706; }
+
+/* ── Sidebar Enhancements ──────────────────────────────────── */
+.sidebar-section-label {
+  font-size: .65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: #64748b;
+  padding: .75rem 1rem .3rem;
+}
+
+.sidebar-group-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .55rem 1rem;
+  color: #94a3b8;
+  font-size: .82rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 7px;
+  margin: 0 .5rem;
+  transition: all .12s;
+  border: none;
+  background: none;
+  width: calc(100% - 1rem);
+}
+.sidebar-group-toggle:hover { background: #1e293b; color: #e2e8f0; }
+.sidebar-group-toggle.open  { color: #60a5fa; }
+
+.sidebar-sub-items {
+  overflow: hidden;
+  transition: max-height .2s ease;
+}
+.sidebar-sub-items .nav-link {
+  padding-left: 2.25rem !important;
+  font-size: .8rem !important;
+}
+
+/* ── Form Section Divider ──────────────────────────────────── */
+.form-section {
+  border: 1px solid var(--erp-border);
+  border-radius: 10px;
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+  background: #fafbfc;
+}
+
+.form-section-title {
+  font-size: .78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--erp-primary);
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  margin-bottom: 1rem;
+  padding-bottom: .5rem;
+  border-bottom: 1px dashed var(--erp-border);
+}
+
+/* ── Hardware Toggle ───────────────────────────────────────── */
+.hardware-toggle {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: linear-gradient(135deg, #fef3c7, #fef9c3);
+  border: 1.5px solid #fde68a;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.hardware-toggle.active {
+  background: linear-gradient(135deg, #dbeafe, #eff6ff);
+  border-color: #93c5fd;
+}
+
+/* ── Serial Input Grid ─────────────────────────────────────── */
+.serial-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: .75rem;
+  max-height: 400px;
+  overflow-y: auto;
+  padding: .5rem;
+  border: 1px solid var(--erp-border);
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.serial-row {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  background: #fff;
+  border: 1px solid var(--erp-border);
+  border-radius: 8px;
+  padding: .5rem .75rem;
+  transition: border-color .15s;
+}
+.serial-row:focus-within { border-color: var(--erp-primary); }
+
+.serial-row .serial-num {
+  font-size: .72rem;
+  font-weight: 700;
+  color: var(--erp-muted);
+  min-width: 1.5rem;
+}
+
+.serial-row input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: .85rem;
+  background: transparent;
+}
+
+/* ── Search Bar ────────────────────────────────────────────── */
+.erp-search {
+  position: relative;
+}
+.erp-search input {
+  padding-left: 2.5rem !important;
+  border-radius: 8px !important;
+  border: 1.5px solid var(--erp-border) !important;
+}
+.erp-search .search-icon {
+  position: absolute;
+  left: .8rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--erp-muted);
+  pointer-events: none;
+}
+
+/* ── Status Pill ───────────────────────────────────────────── */
+.status-in-stock  { background: #dcfce7; color: #15803d; }
+.status-sold      { background: #dbeafe; color: #1d4ed8; }
+.status-service   { background: #fef9c3; color: #92400e; }
+.status-damaged   { background: #fee2e2; color: #b91c1c; }
+.status-returned  { background: #f3e8ff; color: #7c3aed; }
+
+/* ── Warranty Status ───────────────────────────────────────── */
+.warranty-active  { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+.warranty-expired { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+.warranty-na      { background: #f1f5f9; color: #64748b; }
+
+/* ── Empty State ───────────────────────────────────────────── */
+.erp-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--erp-muted);
+}
+.erp-empty .empty-icon {
+  font-size: 3rem;
+  opacity: .3;
+  margin-bottom: 1rem;
+}
+.erp-empty p { font-size: .9rem; }
+
+/* ── Loading Skeleton ──────────────────────────────────────── */
+.erp-skeleton {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+@keyframes skeleton-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Responsive ────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .master-page { padding: 1rem .75rem; }
+  .erp-card { padding: 1rem; }
+  .master-page-header { flex-direction: column; align-items: flex-start; gap: .75rem; }
+}

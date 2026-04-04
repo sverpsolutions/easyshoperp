@@ -1,0 +1,393 @@
+<%- include('../partials/header') %>
+<% const filterStatus = (typeof locals.filterStatus !== 'undefined') ? locals.filterStatus : ''; %>
+
+<div class="container-fluid p-3">
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h5 class="fw-bold mb-0" style="color:#1a1a2e;">
+      <i class="bi bi-journal-text me-2" style="color:#1a73e8;"></i>JOB REGISTER
+    </h5>
+    <div class="d-flex gap-2 align-items-center flex-wrap">
+      <!-- Filter by status -->
+      <form method="GET" class="d-flex gap-1">
+        <select name="status" class="form-select form-select-sm" style="width:140px;" onchange="this.form.submit()">
+          <option value="" <%= filterStatus===''?'selected':'' %>>All Status</option>
+          <option value="Pending" <%= filterStatus==='Pending'?'selected':'' %>>Pending</option>
+          <option value="Assigned" <%= filterStatus==='Assigned'?'selected':'' %>>Assigned</option>
+          <option value="Running" <%= filterStatus==='Running'?'selected':'' %>>Running</option>
+          <option value="Completed" <%= filterStatus==='Completed'?'selected':'' %>>Completed</option>
+          <option value="Dispatched" <%= filterStatus==='Dispatched'?'selected':'' %>>Dispatched</option>
+          <option value="Cancelled" <%= filterStatus==='Cancelled'?'selected':'' %>>Cancelled</option>
+        </select>
+      </form>
+      <button class="btn btn-primary fw-bold" data-bs-toggle="modal" data-bs-target="#createJobModal">
+        <i class="bi bi-plus-lg me-1"></i>NEW ORDER
+      </button>
+    </div>
+  </div>
+
+  <!-- Summary Badges -->
+  <div class="d-flex gap-2 mb-3 flex-wrap">
+    <% const statusCounts = {}; jobs.forEach(j => { statusCounts[j.Status] = (statusCounts[j.Status]||0)+1; }); %>
+    <span class="badge rounded-pill bg-secondary fs-6">Total: <%= jobs.length %></span>
+    <% ['Pending','Assigned','Running','Completed','Dispatched','Cancelled'].forEach(s => { %>
+      <% if (statusCounts[s]) { %>
+      <a href="/owner/jobs?status=<%= s %>" class="badge rounded-pill text-decoration-none
+        bg-<%= s==='Running'?'success':s==='Completed'?'info':s==='Pending'?'warning text-dark':s==='Assigned'?'primary':s==='Dispatched'?'dark':'danger' %>
+        fs-6">
+        <%= s %>: <%= statusCounts[s] %>
+      </a>
+      <% } %>
+    <% }) %>
+  </div>
+
+  <!-- Jobs Table -->
+  <div class="chart-card p-0">
+    <div class="table-responsive">
+      <table class="table table-hover table-sm mb-0 align-middle" id="jobsTable">
+        <thead style="background:#f8f9fa; position:sticky; top:0; z-index:1;">
+          <tr style="font-size:0.68rem; text-transform:uppercase; letter-spacing:0.04em; color:#6c757d;">
+            <th class="ps-3">Si.No</th>
+            <th>Order Date</th>
+            <th>Party Name</th>
+            <th>Mobile</th>
+            <th>Delivery</th>
+            <th>Size</th>
+            <th>Label</th>
+            <th>UPS</th>
+            <th>Gap</th>
+            <th>Paper</th>
+            <th>Core</th>
+            <th>Packing</th>
+            <th>Type</th>
+            <th>Order Qty</th>
+            <th>Produced</th>
+            <th>Status</th>
+            <th>Machine</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody style="font-size:0.8rem;">
+          <% jobs.forEach((j, i) => { %>
+          <tr id="row-<%= j.Job_ID %>">
+            <td class="ps-3">
+              <span class="fw-bold text-primary" style="font-size:0.75rem;"><%= j.Job_Number %></span><br>
+              <small class="text-muted">#<%= i+1 %></small>
+            </td>
+            <td class="text-muted small"><%= new Date(j.Order_Date).toLocaleDateString('en-IN') %></td>
+            <td>
+              <div class="fw-bold" style="color:#212529;"><%= j.Customer_Name %></div>
+              <% if(j.Notes) { %><small class="text-muted" style="font-size:0.65rem;"><%= j.Notes.substring(0,30) %></small><% } %>
+            </td>
+            <td class="text-muted small"><%= j.Mobile_No || '—' %></td>
+            <td class="text-muted small">
+              <% if(j.Delivery_Date) { %>
+                <% const isOverdue = new Date(j.Delivery_Date) < new Date() && !['Completed','Dispatched'].includes(j.Status); %>
+                <span class="<%= isOverdue?'text-danger fw-bold':'' %>">
+                  <%= new Date(j.Delivery_Date).toLocaleDateString('en-IN') %>
+                  <% if(isOverdue) { %><i class="bi bi-exclamation-triangle ms-1"></i><% } %>
+                </span>
+              <% } else { %>—<% } %>
+            </td>
+            <td><span class="badge bg-light text-dark border"><%= j.Size || '—' %></span></td>
+            <td class="text-muted small"><%= j.Label || '—' %></td>
+            <td class="text-center"><span class="badge bg-info text-dark"><%= j.UPS %></span></td>
+            <td><span class="badge <%= j.Gap_Type==='No Gap'?'bg-warning text-dark':'bg-light text-dark border' %>"
+                      style="font-size:0.65rem;"><%= j.Gap_Type %></span></td>
+            <td class="text-muted small"><%= j.Paper || '—' %></td>
+            <td class="text-muted small"><%= j.Core || '—' %></td>
+            <td class="text-muted small"><%= j.Packing || '—' %></td>
+            <td><span class="badge <%= j.Label_Type==='Printed'?'bg-primary':'bg-secondary' %>"><%= j.Label_Type %></span></td>
+            <td class="fw-bold text-end pe-2"><%= j.Required_Qty.toLocaleString() %></td>
+            <td class="text-end pe-2">
+              <% const pct = j.Required_Qty>0 ? Math.round(j.Produced_Qty*100/j.Required_Qty) : 0; %>
+              <span class="<%= pct>=100?'text-success fw-bold':'text-muted' %>">
+                <%= j.Produced_Qty.toLocaleString() %>
+              </span>
+              <% if(j.Produced_Qty>0) { %>
+              <br><small style="font-size:0.6rem; color:#aaa;"><%= pct %>%</small>
+              <% } %>
+            </td>
+            <td>
+              <span class="badge bg-<%= j.Status==='Running'?'success':j.Status==='Completed'?'info':j.Status==='Pending'?'warning text-dark':j.Status==='Assigned'?'primary':j.Status==='Dispatched'?'dark':'danger' %>">
+                <%= j.Status %>
+              </span>
+            </td>
+            <td class="text-muted small"><%= j.Machine_Name || '—' %></td>
+            <td>
+              <div class="d-flex gap-1">
+                <button class="btn btn-xs btn-outline-primary" title="Assign"
+                  onclick="showAssignModal(<%= j.Job_ID %>, '<%= j.Job_Number %>', <%= j.Assigned_Machine_ID||'null' %>, <%= j.Assigned_Operator_ID||'null' %>)">
+                  <i class="bi bi-person-check"></i>
+                </button>
+                <button class="btn btn-xs btn-outline-secondary" title="Update Status"
+                  onclick="showStatusModal(<%= j.Job_ID %>, '<%= j.Job_Number %>', '<%= j.Status %>')">
+                  <i class="bi bi-pencil"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          <% }) %>
+          <% if (!jobs.length) { %>
+          <tr>
+            <td colspan="18" class="text-center py-5 text-muted">
+              <i class="bi bi-journal-x fs-2 d-block mb-2"></i>
+              No jobs found. Click <strong>NEW ORDER</strong> to create the first job.
+            </td>
+          </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===== CREATE JOB MODAL ===== -->
+<div class="modal fade" id="createJobModal" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header" style="background:#f8f9fa;">
+        <h5 class="modal-title fw-bold">
+          <i class="bi bi-plus-circle me-2 text-primary"></i>New Order Registration
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form action="/owner/jobs" method="POST">
+        <div class="modal-body">
+          <div class="row g-3">
+
+            <!-- Row 1: Party + Date -->
+            <div class="col-md-4">
+              <label class="form-label fw-bold small">PARTY NAME <span class="text-danger">*</span></label>
+              <input type="text" name="customer_name" class="form-control" placeholder="e.g. SHARAN TRADING" required autofocus>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-bold small">MOBILE NO</label>
+              <input type="text" name="mobile_no" class="form-control" placeholder="e.g. 9871118688">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label fw-bold small">ORDER DATE <span class="text-danger">*</span></label>
+              <input type="date" name="order_date" class="form-control"
+                     value="<%= new Date().toISOString().split('T')[0] %>" required>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-bold small">DELIVERY DATE</label>
+              <input type="date" name="delivery_date" class="form-control">
+            </div>
+
+            <div class="col-12"><hr class="my-1"></div>
+
+            <!-- Row 2: Label Specs -->
+            <div class="col-md-2">
+              <label class="form-label fw-bold small">SIZE <span class="text-danger">*</span></label>
+              <input type="text" name="size" class="form-control" placeholder="e.g. 38X25" required>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-bold small">LABEL</label>
+              <input type="text" name="label" class="form-control" placeholder="e.g. Product Label">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label fw-bold small">UPS</label>
+              <input type="number" name="ups" class="form-control" value="1" min="1" placeholder="e.g. 2">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label fw-bold small">WITH GAP / NO GAP</label>
+              <select name="gap_type" class="form-select">
+                <option value="With Gap">With Gap</option>
+                <option value="No Gap">No Gap</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-bold small">PAPER (Material)</label>
+              <input type="text" name="paper" class="form-control" placeholder="e.g. TT, PE, BOPP, Art Paper">
+            </div>
+
+            <!-- Row 3: More specs -->
+            <div class="col-md-2">
+              <label class="form-label fw-bold small">CORE</label>
+              <input type="text" name="core" class="form-control" placeholder="e.g. 1&quot;/out">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-bold small">PACKING</label>
+              <input type="text" name="packing" class="form-control" placeholder="e.g. 4 BOX, 1 ROLL">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label fw-bold small">PLAIN / PRINTED</label>
+              <select name="label_type" class="form-select">
+                <option value="Plain">Plain</option>
+                <option value="Printed">Printed</option>
+                <option value="Custom">Custom</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label fw-bold small">ORDER QTY <span class="text-danger">*</span></label>
+              <input type="number" name="required_qty" class="form-control" placeholder="e.g. 4000" min="1" required>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-bold small">PRIORITY</label>
+              <select name="priority" class="form-select">
+                <option value="1">🔴 1 — Critical / Urgent</option>
+                <option value="2">🟠 2 — High</option>
+                <option value="3">🟡 3 — Medium-High</option>
+                <option value="4">🟢 4 — Medium</option>
+                <option value="5" selected>⚪ 5 — Normal</option>
+              </select>
+            </div>
+
+            <div class="col-12"><hr class="my-1"></div>
+
+            <!-- Row 4: Assign -->
+            <div class="col-md-4">
+              <label class="form-label fw-bold small">ASSIGN TO MACHINE</label>
+              <select name="machine_id" class="form-select">
+                <option value="">— Select Machine (optional) —</option>
+                <% machines.forEach(m => { %>
+                <option value="<%= m.Machine_ID %>">
+                  <%= m.Machine_Name %> (<%= m.Machine_Type %>)
+                  <%= m.Status==='Running'?' 🔴 BUSY':m.Status==='Idle'?' 🟢 IDLE':' ⚫ '+m.Status %>
+                </option>
+                <% }) %>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold small">ASSIGN TO OPERATOR</label>
+              <select name="operator_id" class="form-select">
+                <option value="">— Select Operator (optional) —</option>
+                <% operators.forEach(o => { %>
+                <option value="<%= o.Employee_ID %>"><%= o.Name %></option>
+                <% }) %>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold small">NOTES</label>
+              <input type="text" name="notes" class="form-control" placeholder="Any special instructions">
+            </div>
+
+            <div class="col-12"><hr class="my-1"></div>
+
+            <!-- Telegram -->
+            <div class="col-md-6">
+              <div class="d-flex align-items-start gap-3 p-3 rounded" style="background:#e8f4fd; border:1px solid #bee3f8;">
+                <div class="form-check form-switch mb-0 mt-1">
+                  <input class="form-check-input" type="checkbox" id="tg_notify" name="telegram_notify" value="1" style="width:2.5em;height:1.3em;">
+                </div>
+                <div>
+                  <label for="tg_notify" class="fw-bold small mb-0" style="cursor:pointer; color:#0c5460;">
+                    <i class="bi bi-telegram me-1" style="color:#0088cc;"></i>TELEGRAM NOTIFY
+                  </label>
+                  <div class="text-muted" style="font-size:0.7rem;">Send job updates to customer via Telegram</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6" id="chatIdField" style="display:none;">
+              <label class="form-label fw-bold small">CUSTOMER TELEGRAM CHAT ID</label>
+              <input type="text" name="customer_chat_id" class="form-control font-monospace"
+                     placeholder="e.g. 123456789">
+              <div class="form-text text-muted" style="font-size:0.7rem;">Customer must message your bot first</div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" style="background:#f8f9fa;">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary fw-bold px-4">
+            <i class="bi bi-plus-lg me-1"></i>CREATE ORDER
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ASSIGN MODAL ===== -->
+<div class="modal fade" id="assignModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header" style="background:#f8f9fa;">
+        <h6 class="modal-title fw-bold"><i class="bi bi-person-check me-2 text-primary"></i>Assign Job</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form action="/owner/jobs/update-assign" method="POST">
+        <input type="hidden" id="assignJobId" name="job_id" value="">
+        <div class="modal-body">
+          <p class="text-muted small mb-3">Job: <strong id="assignJobNum"></strong></p>
+          <div class="mb-3">
+            <label class="form-label fw-bold small">MACHINE</label>
+            <select name="machine_id" id="assignMachineSelect" class="form-select">
+              <option value="">— None —</option>
+              <% machines.forEach(m => { %>
+              <option value="<%= m.Machine_ID %>" data-id="<%= m.Machine_ID %>">
+                <%= m.Machine_Name %> (<%= m.Machine_Type %>) — <%= m.Status %>
+              </option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold small">OPERATOR</label>
+            <select name="operator_id" id="assignOperatorSelect" class="form-select">
+              <option value="">— None —</option>
+              <% operators.forEach(o => { %>
+              <option value="<%= o.Employee_ID %>" data-id="<%= o.Employee_ID %>"><%= o.Name %></option>
+              <% }) %>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer" style="background:#f8f9fa;">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary fw-bold">Save Assignment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ===== STATUS MODAL ===== -->
+<div class="modal fade" id="statusModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content">
+      <div class="modal-header" style="background:#f8f9fa;">
+        <h6 class="modal-title fw-bold"><i class="bi bi-pencil me-2"></i>Update Status</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form action="/owner/jobs/update-status" method="POST">
+        <input type="hidden" id="statusJobId" name="job_id" value="">
+        <div class="modal-body">
+          <p class="text-muted small mb-3">Job: <strong id="statusJobNum"></strong></p>
+          <select name="status" id="statusSelect" class="form-select">
+            <option value="Pending">Pending</option>
+            <option value="Assigned">Assigned</option>
+            <option value="Running">Running</option>
+            <option value="Completed">Completed</option>
+            <option value="Dispatched">Dispatched</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
+        </div>
+        <div class="modal-footer" style="background:#f8f9fa;">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary fw-bold">Update</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function showAssignModal(jobId, jobNum, machineId, operatorId) {
+    document.getElementById('assignJobId').value  = jobId;
+    document.getElementById('assignJobNum').textContent = jobNum;
+    const ms = document.getElementById('assignMachineSelect');
+    const os = document.getElementById('assignOperatorSelect');
+    for (let o of ms.options) o.selected = (parseInt(o.dataset.id) === machineId);
+    for (let o of os.options) o.selected = (parseInt(o.dataset.id) === operatorId);
+    new bootstrap.Modal(document.getElementById('assignModal')).show();
+}
+function showStatusModal(jobId, jobNum, currentStatus) {
+    document.getElementById('statusJobId').value  = jobId;
+    document.getElementById('statusJobNum').textContent = jobNum;
+    document.getElementById('statusSelect').value = currentStatus;
+    new bootstrap.Modal(document.getElementById('statusModal')).show();
+}
+document.getElementById('tg_notify')?.addEventListener('change', function() {
+    document.getElementById('chatIdField').style.display = this.checked ? 'block' : 'none';
+});
+</script>
+
+<%- include('../partials/footer') %>

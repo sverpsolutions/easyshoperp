@@ -1,0 +1,75 @@
+<%- include('_head') %>
+
+<div class="topbar">
+  <a href="/portal/dashboard" class="topbar-icon" style="text-decoration:none;"><i class="bi bi-arrow-left"></i></a>
+  <div class="topbar-title">Production Status</div>
+  <div class="topbar-icon"></div>
+</div>
+
+<div class="page-pad">
+
+  <% if(!jobs.length){ %>
+  <div class="empty">
+    <i class="bi bi-gear"></i>
+    <div style="font-weight:600;font-size:1rem;color:#475569;">No jobs yet</div>
+    <div style="font-size:0.82rem;margin-top:6px;">Your orders will appear here once in production</div>
+  </div>
+  <% } %>
+
+  <% const stCls={Running:'bs-running',Assigned:'bs-production',Pending:'bs-pending',Completed:'bs-completed',Cancelled:'bs-rejected'}; %>
+
+  <% jobs.forEach(j=>{ %>
+  <div class="card-m">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+      <div>
+        <div style="font-weight:800;font-size:1rem;color:#0f172a;letter-spacing:-0.3px;"><%= j.Job_Number %></div>
+        <div style="font-size:0.78rem;color:#64748b;margin-top:2px;"><%= j.Label||'Label' %> • <%= j.Label_Type||'' %> <% if(j.Size){ %> • <%= j.Size %><% } %></div>
+      </div>
+      <span class="badge-status <%= stCls[j.Status]||'bs-pending' %>"><%= j.Status %></span>
+    </div>
+
+    <!-- Progress -->
+    <% if(['Running','Assigned'].includes(j.Status)){ %>
+    <div style="margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:#64748b;margin-bottom:5px;">
+        <span>Production Progress</span>
+        <span style="font-weight:700;color:<%= j.Progress>=100?'#16a34a':'#f59e0b' %>;"><%= j.Progress %>%</span>
+      </div>
+      <div class="prog-bar" style="height:10px;">
+        <div class="prog-fill" style="width:<%= Math.min(100,j.Progress||0) %>%;"></div>
+      </div>
+      <div style="font-size:0.72rem;color:#94a3b8;margin-top:5px;">
+        <strong style="color:#0f172a;"><%= (j.Produced_Qty||0).toLocaleString('en-IN') %></strong> of <strong><%= j.Required_Qty.toLocaleString('en-IN') %></strong> pieces produced
+      </div>
+    </div>
+    <% } %>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <div style="background:#f8fafc;border-radius:10px;padding:9px 12px;">
+        <div style="font-size:0.65rem;color:#94a3b8;font-weight:600;">ORDER DATE</div>
+        <div style="font-weight:600;font-size:0.82rem;color:#0f172a;margin-top:2px;"><%= j.Order_Date||'—' %></div>
+      </div>
+      <div style="background:#f8fafc;border-radius:10px;padding:9px 12px;">
+        <div style="font-size:0.65rem;color:#94a3b8;font-weight:600;">DELIVERY DATE</div>
+        <div style="font-weight:600;font-size:0.82rem;color:#0f172a;margin-top:2px;"><%= j.Delivery_Date||'—' %></div>
+      </div>
+    </div>
+
+    <% if(j.Status==='Completed'){ %>
+    <div style="background:#f0fdf4;border-radius:10px;padding:10px 12px;margin-top:10px;display:flex;align-items:center;gap-8px;">
+      <i class="bi bi-check-circle-fill" style="color:#16a34a;margin-right:8px;"></i>
+      <span style="font-size:0.82rem;color:#15803d;font-weight:600;">Production complete — Ready for dispatch</span>
+    </div>
+    <% } %>
+  </div>
+  <% }) %>
+</div>
+
+<nav class="bottomnav">
+  <a href="/portal/dashboard" class="nav-item"><i class="bi bi-house-fill"></i>Home</a>
+  <a href="/portal/orders"    class="nav-item"><i class="bi bi-bag"></i>Orders</a>
+  <a href="/portal/jobs"      class="nav-item active"><i class="bi bi-gear"></i>Jobs</a>
+  <a href="/portal/bills"     class="nav-item"><i class="bi bi-receipt"></i>Bills</a>
+  <a href="/portal/profile"   class="nav-item"><i class="bi bi-person"></i>Profile</a>
+</nav>
+</body></html>

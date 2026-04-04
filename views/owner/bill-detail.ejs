@@ -1,0 +1,103 @@
+<%- include('../partials/header') %>
+<div class="container-fluid p-3">
+  <div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
+    <a href="/owner/bills" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i></a>
+    <h5 class="mb-0 fw-bold"><i class="bi bi-receipt me-2 text-info"></i>Bill: <%= bill.Bill_Number %></h5>
+    <span class="badge bg-<%= bill.Payment_Status==='Paid'?'success':bill.Payment_Status==='Partial'?'warning text-dark':bill.Payment_Status==='Cancelled'?'dark':'danger' %> fs-6"><%= bill.Payment_Status %></span>
+    <div class="ms-auto d-flex gap-2">
+      <% if(bill.Payment_Status!='Paid'&&bill.Payment_Status!='Cancelled'){ %>
+      <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#payModal"><i class="bi bi-cash me-1"></i>Receive Payment</button>
+      <% } %>
+      <% if(bill.Payment_Status!='Cancelled'){ %>
+      <form method="POST" action="/owner/bills/<%= bill.Bill_ID %>/cancel" onsubmit="return confirm('Cancel this bill?')">
+        <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-x-circle me-1"></i>Cancel Bill</button>
+      </form>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-md-5">
+      <div class="chart-card">
+        <h6 class="fw-bold mb-3 text-info"><i class="bi bi-info-circle me-1"></i>Bill Details</h6>
+        <div class="detail-group">
+          <div class="detail-item"><span>Bill No</span><strong class="font-monospace"><%= bill.Bill_Number %></strong></div>
+          <div class="detail-item"><span>Bill Date</span><strong><%= new Date(bill.Bill_Date).toLocaleDateString('en-IN') %></strong></div>
+          <div class="detail-item"><span>Customer</span><strong><%= bill.Customer_Name %></strong></div>
+          <div class="detail-item"><span>Mobile</span><strong><%= bill.Mobile||'—' %></strong></div>
+          <div class="detail-item"><span>Job No</span><strong><%= bill.Job_Number %></strong></div>
+          <% if(bill.External_Ref){ %><div class="detail-item"><span>External Ref</span><strong class="font-monospace"><%= bill.External_Ref %></strong></div><% } %>
+          <div class="detail-item"><span>Created By</span><strong><%= bill.Created_By_Name %></strong></div>
+        </div>
+        <% if(bill.Notes){ %><div class="mt-2 p-2 rounded small" style="background:#f0f7ff;border-left:3px solid #0dcaf0;"><%= bill.Notes %></div><% } %>
+      </div>
+    </div>
+
+    <div class="col-md-7">
+      <div class="chart-card">
+        <h6 class="fw-bold mb-3 text-success"><i class="bi bi-calculator me-1"></i>Amount Summary</h6>
+        <div class="table-responsive">
+          <table class="table table-sm mb-0">
+            <tbody>
+              <tr><td>Gross Amount</td><td class="text-end">₹<%= parseFloat(bill.Gross_Amount||0).toLocaleString('en-IN') %></td></tr>
+              <tr><td class="text-success">Less: Discount</td><td class="text-end text-success">− ₹<%= parseFloat(bill.Discount_Amt||0).toLocaleString('en-IN') %></td></tr>
+              <tr><td>Add: Tax</td><td class="text-end">+ ₹<%= parseFloat(bill.Tax_Amount||0).toLocaleString('en-IN') %></td></tr>
+              <tr class="table-primary"><td class="fw-bold fs-6">NET AMOUNT</td><td class="text-end fw-bold fs-6">₹<%= parseFloat(bill.Net_Amount).toLocaleString('en-IN') %></td></tr>
+              <tr><td class="text-success">Amount Received</td><td class="text-end text-success fw-bold">₹<%= parseFloat(bill.Amount_Paid||0).toLocaleString('en-IN') %></td></tr>
+              <tr class="<%= parseFloat(bill.Balance_Due||0)>0?'table-danger':'' %>">
+                <td class="fw-bold">Balance Due</td>
+                <td class="text-end fw-bold text-danger fs-6">₹<%= parseFloat(bill.Balance_Due||0).toLocaleString('en-IN') %></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Payment History -->
+      <div class="chart-card mt-3">
+        <h6 class="fw-bold mb-3"><i class="bi bi-journal-check me-1"></i>Payment History</h6>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover">
+            <thead style="background:#f8f9fa;"><tr><th>Date</th><th>Amount</th><th>Mode</th><th>Ref No</th><th>By</th><th>Narration</th></tr></thead>
+            <tbody>
+              <% payments.forEach(p=>{ %>
+              <tr>
+                <td class="small"><%= new Date(p.Payment_Date).toLocaleDateString('en-IN') %></td>
+                <td class="fw-bold text-success">₹<%= parseFloat(p.Amount).toLocaleString('en-IN') %></td>
+                <td class="small"><%= p.Payment_Mode %></td>
+                <td class="small font-monospace"><%= p.Cheque_No||p.Reference_No||'—' %></td>
+                <td class="small"><%= p.Entered_By_Name %></td>
+                <td class="small text-muted"><%= p.Narration||'—' %></td>
+              </tr>
+              <% }) %>
+              <% if(!payments.length){ %><tr><td colspan="6" class="text-center text-muted py-3">No payments yet</td></tr><% } %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Payment Modal -->
+<div class="modal fade" id="payModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header" style="background:#198754;"><h5 class="modal-title text-white fw-bold"><i class="bi bi-cash me-2"></i>Receive Payment</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+      <form method="POST" action="/owner/bills/<%= bill.Bill_ID %>/pay">
+        <div class="modal-body">
+          <div class="alert alert-info mb-3">Balance Due: <strong>₹<%= parseFloat(bill.Balance_Due||0).toLocaleString('en-IN') %></strong></div>
+          <div class="row g-2">
+            <div class="col-6"><label class="form-label fw-bold small">DATE</label><input type="date" name="payment_date" class="form-control" value="<%= new Date().toISOString().split('T')[0] %>"></div>
+            <div class="col-6"><label class="form-label fw-bold small">AMOUNT (₹) *</label><input type="number" name="amount" class="form-control" value="<%= bill.Balance_Due %>" required></div>
+            <div class="col-6"><label class="form-label fw-bold small">MODE</label><select name="payment_mode" class="form-select"><option>Cash</option><option>Cheque</option><option>UPI</option><option>NEFT</option><option>RTGS</option></select></div>
+            <div class="col-6"><label class="form-label fw-bold small">REF / CHEQUE NO</label><input type="text" name="cheque_no" class="form-control" placeholder="Optional"></div>
+            <div class="col-12"><label class="form-label fw-bold small">NARRATION</label><input type="text" name="narration" class="form-control" placeholder="Cash received..."></div>
+          </div>
+        </div>
+        <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-success fw-bold">💰 Confirm</button></div>
+      </form>
+    </div>
+  </div>
+</div>
+<%- include('../partials/footer') %>

@@ -1,0 +1,165 @@
+<%- include('../partials/header') %>
+<div class="container-fluid p-3">
+  <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <h5 class="mb-0 fw-bold" style="color:#1a1a2e;"><i class="bi bi-cash-stack me-2" style="color:#f59e0b;"></i>EMPLOYEE ADVANCE REQUESTS</h5>
+    <div class="d-flex gap-2">
+      <span class="badge bg-primary fs-6"><%= advances.filter(a=>a.Status==='Pending').length %> Pending</span>
+      <span class="badge bg-warning text-dark fs-6"><%= advances.filter(a=>a.Status==='Approved').length %> Approved (Cash Not Given)</span>
+    </div>
+  </div>
+
+  <!-- Summary cards -->
+  <div class="row g-2 mb-3">
+    <div class="col-6 col-md-3"><div class="stat-card pending"><div class="stat-value"><%= advances.filter(a=>a.Status==='Pending').length %></div><div class="stat-label">Awaiting Approval</div></div></div>
+    <div class="col-6 col-md-3"><div class="stat-card running"><div class="stat-value">₹<%= advances.filter(a=>a.Status==='Approved').reduce((s,a)=>s+parseFloat(a.Amount_Approved||0),0).toLocaleString('en-IN') %></div><div class="stat-label">Cash to Give</div></div></div>
+    <div class="col-6 col-md-3"><div class="stat-card stopped"><div class="stat-value">₹<%= advances.filter(a=>a.Status==='Paid'&&!a.Is_Deducted).reduce((s,a)=>s+parseFloat(a.Amount_Paid||0),0).toLocaleString('en-IN') %></div><div class="stat-label">Pending Recovery</div></div></div>
+    <div class="col-6 col-md-3"><div class="stat-card utilization"><div class="stat-value">₹<%= advances.filter(a=>a.Status==='Paid').reduce((s,a)=>s+parseFloat(a.Amount_Paid||0),0).toLocaleString('en-IN') %></div><div class="stat-label">Total Given (All Time)</div></div></div>
+  </div>
+
+  <!-- Pending Requests — Owner Action -->
+  <% const pending = advances.filter(a=>a.Status==='Pending'); %>
+  <% if(pending.length){ %>
+  <div class="chart-card mb-3" style="border-left:4px solid #dc3545;">
+    <h6 class="fw-bold mb-3 text-danger"><i class="bi bi-exclamation-circle me-1"></i>PENDING APPROVAL (<%= pending.length %>)</h6>
+    <div class="row g-3">
+      <% pending.forEach(a=>{ %>
+      <div class="col-md-6 col-lg-4">
+        <div class="p-3 rounded border" style="background:#fff8f8;">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+              <div class="fw-bold"><%= a.Employee_Name %></div>
+              <small class="text-muted"><%= a.Role %> &bull; <i class="bi bi-phone"></i> <%= a.Mobile||'—' %></small>
+            </div>
+            <div class="text-end">
+              <div class="fw-bold fs-5 text-danger">₹<%= parseFloat(a.Amount_Requested).toLocaleString('en-IN') %></div>
+              <small class="text-muted"><%= new Date(a.Request_Date).toLocaleDateString('en-IN') %></small>
+            </div>
+          </div>
+          <% if(a.Reason){ %><div class="small p-2 mb-2 rounded" style="background:#f5f5f5;"><i class="bi bi-chat-left-text me-1"></i><%= a.Reason %></div><% } %>
+          <!-- Monthly usage bar -->
+          <% const pct2 = Math.min(100,Math.round(parseFloat(a.Month_Used||0)/Math.max(1,parseFloat(a.Advance_Limit_Monthly||5000))*100)); %>
+          <div class="mb-2">
+            <div class="d-flex justify-content-between"><small>This month: ₹<%= parseFloat(a.Month_Used||0).toLocaleString('en-IN') %></small><small>Limit: ₹<%= parseFloat(a.Advance_Limit_Monthly||5000).toLocaleString('en-IN') %></small></div>
+            <div class="progress" style="height:6px;"><div class="progress-bar <%= pct2>=100?'bg-danger':pct2>=75?'bg-warning':'bg-success' %>" style="width:<%= pct2 %>%;"></div></div>
+          </div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-success btn-sm flex-fill" data-bs-toggle="modal" data-bs-target="#approveModal<%= a.Advance_ID %>"><i class="bi bi-check-lg me-1"></i>Approve</button>
+            <button class="btn btn-outline-danger btn-sm flex-fill" data-bs-toggle="modal" data-bs-target="#rejectModal<%= a.Advance_ID %>"><i class="bi bi-x-lg me-1"></i>Reject</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Approve Modal -->
+      <div class="modal fade" id="approveModal<%= a.Advance_ID %>" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header" style="background:#198754;"><h5 class="modal-title text-white fw-bold"><i class="bi bi-check-circle me-2"></i>Approve Advance — <%= a.Employee_Name %></h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+            <form method="POST" action="/owner/advances/<%= a.Advance_ID %>/approve">
+              <div class="modal-body">
+                <label class="form-label fw-bold">Amount Requested: <span class="text-danger">₹<%= parseFloat(a.Amount_Requested).toLocaleString('en-IN') %></span></label>
+                <label class="form-label fw-bold small mt-2">APPROVE AMOUNT (₹) *</label>
+                <input type="number" name="amount_approved" class="form-control form-control-lg" value="<%= a.Amount_Requested %>" required min="1">
+                <label class="form-label fw-bold small mt-3">NOTES (optional)</label>
+                <input type="text" name="notes" class="form-control" placeholder="Any note for admin">
+              </div>
+              <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-success fw-bold">✅ Approve</button></div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reject Modal -->
+      <div class="modal fade" id="rejectModal<%= a.Advance_ID %>" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header bg-danger text-white"><h5 class="modal-title fw-bold">Reject Advance — <%= a.Employee_Name %></h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+            <form method="POST" action="/owner/advances/<%= a.Advance_ID %>/reject">
+              <div class="modal-body">
+                <label class="form-label fw-bold small">REASON FOR REJECTION *</label>
+                <textarea name="reject_reason" class="form-control" rows="3" required placeholder="Tell employee why..."></textarea>
+              </div>
+              <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-danger fw-bold">Reject</button></div>
+            </form>
+          </div>
+        </div>
+      </div>
+      <% }) %>
+    </div>
+  </div>
+  <% } %>
+
+  <!-- Approved — Ready to Pay (Admin gives cash) -->
+  <% const approved = advances.filter(a=>a.Status==='Approved'); %>
+  <% if(approved.length){ %>
+  <div class="chart-card mb-3" style="border-left:4px solid #f59e0b;">
+    <h6 class="fw-bold mb-3" style="color:#d97706;"><i class="bi bi-cash me-1"></i>APPROVED — CASH TO GIVE (<%= approved.length %>)</h6>
+    <div class="table-responsive">
+      <table class="table table-sm table-hover">
+        <thead style="background:#fffbf0;"><tr><th>Employee</th><th>Approved On</th><th>Approved By</th><th class="text-end">Amount</th><th>Notes</th><th>Action</th></tr></thead>
+        <tbody>
+          <% approved.forEach(a=>{ %>
+          <tr>
+            <td><strong><%= a.Employee_Name %></strong><br><small class="text-muted"><%= a.Role %></small></td>
+            <td class="small"><%= new Date(a.Approved_Date).toLocaleDateString('en-IN') %></td>
+            <td class="small"><%= a.Approved_By_Name||'—' %></td>
+            <td class="text-end fw-bold text-warning fs-6">₹<%= parseFloat(a.Amount_Approved).toLocaleString('en-IN') %></td>
+            <td class="small text-muted"><%= a.Notes||'—' %></td>
+            <td>
+              <button class="btn btn-sm btn-warning fw-bold" data-bs-toggle="modal" data-bs-target="#payModal<%= a.Advance_ID %>"><i class="bi bi-cash me-1"></i>Give Cash</button>
+            </td>
+          </tr>
+          <!-- Give Cash Modal -->
+          <div class="modal fade" id="payModal<%= a.Advance_ID %>" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content">
+                <div class="modal-header" style="background:#f59e0b;"><h5 class="modal-title fw-bold">Give Cash — <%= a.Employee_Name %></h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <form method="POST" action="/owner/advances/<%= a.Advance_ID %>/pay">
+                  <div class="modal-body">
+                    <div class="alert alert-warning mb-3"><strong>Approved Amount: ₹<%= parseFloat(a.Amount_Approved).toLocaleString('en-IN') %></strong></div>
+                    <label class="form-label fw-bold small">ACTUAL AMOUNT GIVEN (₹)</label>
+                    <input type="number" name="amount_paid" class="form-control form-control-lg" value="<%= a.Amount_Approved %>" required min="1">
+                    <label class="form-label fw-bold small mt-3">PAYMENT MODE</label>
+                    <select name="payment_mode" class="form-select"><option>Cash</option><option>Bank Transfer</option><option>UPI</option></select>
+                    <label class="form-label fw-bold small mt-3">NOTES</label>
+                    <input type="text" name="notes" class="form-control" placeholder="Any remarks">
+                  </div>
+                  <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-warning fw-bold">💰 Confirm Cash Given</button></div>
+                </form>
+              </div>
+            </div>
+          </div>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <% } %>
+
+  <!-- History -->
+  <div class="chart-card">
+    <h6 class="fw-bold mb-3"><i class="bi bi-clock-history me-1"></i>All Advance History</h6>
+    <div class="table-responsive">
+      <table class="table table-sm table-hover">
+        <thead style="background:#f8f9fa;"><tr><th>Employee</th><th>Requested</th><th>Amount</th><th>Paid</th><th>Status</th><th>Mode</th><th>Paid By</th><th>Deducted</th></tr></thead>
+        <tbody>
+          <% advances.filter(a=>a.Status==='Paid'||a.Status==='Rejected').forEach(a=>{ %>
+          <tr>
+            <td class="fw-bold small"><%= a.Employee_Name %></td>
+            <td class="small"><%= new Date(a.Request_Date).toLocaleDateString('en-IN') %></td>
+            <td class="text-end">₹<%= parseFloat(a.Amount_Requested).toLocaleString('en-IN') %></td>
+            <td class="text-end <%= a.Status==='Paid'?'text-danger fw-bold':'' %>"><%= a.Amount_Paid?'₹'+parseFloat(a.Amount_Paid).toLocaleString('en-IN'):'—' %></td>
+            <td><span class="badge bg-<%= a.Status==='Paid'?'danger':a.Status==='Rejected'?'secondary':'secondary' %>"><%= a.Status %></span></td>
+            <td class="small"><%= a.Payment_Mode||'—' %></td>
+            <td class="small"><%= a.Paid_By_Name||'—' %></td>
+            <td class="text-center"><%= a.Is_Deducted?'<span class="badge bg-success">✓ '+a.Deduct_Month+'</span>':'—' %></td>
+          </tr>
+          <% }) %>
+          <% if(!advances.filter(a=>a.Status==='Paid'||a.Status==='Rejected').length){ %>
+          <tr><td colspan="8" class="text-center text-muted py-3">No history yet</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<%- include('../partials/footer') %>

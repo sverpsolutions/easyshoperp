@@ -1,0 +1,133 @@
+<%- include('../partials/header') %>
+<% function fmtQty(n){ return Number(n||0).toLocaleString(); }
+   function pct(a,b){ return b>0?Math.round(a*100/b):0; } %>
+
+<div class="container-fluid p-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="fw-bold mb-0" style="color:#1a1a2e;">
+      <i class="bi bi-graph-up-arrow me-2" style="color:#198754;"></i>JOB COMPLETION REPORT
+    </h5>
+    <a href="/owner/reports" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Back</a>
+  </div>
+
+  <form class="chart-card mb-3" method="GET">
+    <div class="row g-2 align-items-end">
+      <div class="col-md-3"><label class="form-label fw-bold small">FROM</label><input type="date" name="from" value="<%= from %>" class="form-control"></div>
+      <div class="col-md-3"><label class="form-label fw-bold small">TO</label><input type="date" name="to" value="<%= to %>" class="form-control"></div>
+      <div class="col-md-2"><button type="submit" class="btn btn-primary w-100"><i class="bi bi-search me-1"></i>Filter</button></div>
+    </div>
+  </form>
+
+  <!-- Summary Cards -->
+  <% const totJobs=monthly.reduce((s,r)=>s+(r.Total||0),0);
+     const totComp=monthly.reduce((s,r)=>s+(r.Completed||0),0);
+     const totQty =monthly.reduce((s,r)=>s+(r.Total_Qty||0),0);
+     const totProd=monthly.reduce((s,r)=>s+(r.Produced_Qty||0),0); %>
+  <div class="row g-3 mb-3">
+    <div class="col-6 col-md-3"><div class="stat-card operators"><div class="stat-value"><%= totJobs %></div><div class="stat-label">Total Jobs</div></div></div>
+    <div class="col-6 col-md-3"><div class="stat-card running"><div class="stat-value"><%= totComp %></div><div class="stat-label">Completed</div></div></div>
+    <div class="col-6 col-md-3"><div class="stat-card production"><div class="stat-value"><%= pct(totComp,totJobs) %>%</div><div class="stat-label">Completion Rate</div></div></div>
+    <div class="col-6 col-md-3"><div class="stat-card idle"><div class="stat-value"><%= fmtQty(totProd) %></div><div class="stat-label">Units Produced</div></div></div>
+  </div>
+
+  <div class="row g-3">
+    <!-- Monthly chart -->
+    <div class="col-md-8">
+      <div class="chart-card">
+        <h6 class="fw-bold mb-3" style="color:#1a1a2e;">Monthly Job Completion Trend</h6>
+        <canvas id="monthChart" height="160"></canvas>
+      </div>
+    </div>
+
+    <!-- By Label Type -->
+    <div class="col-md-4">
+      <div class="chart-card">
+        <h6 class="fw-bold mb-3" style="color:#1a1a2e;">By Label Type</h6>
+        <% byType.forEach(r => { %>
+        <div class="mb-3">
+          <div class="d-flex justify-content-between mb-1">
+            <span class="badge <%= r.Label_Type==='Printed'?'bg-primary':'bg-secondary' %>"><%= r.Label_Type %></span>
+            <span class="text-muted small"><%= r.Completed %>/<%= r.Total %> jobs</span>
+          </div>
+          <div class="progress" style="height:10px;border-radius:5px;">
+            <div class="progress-bar bg-success" style="width:<%= pct(r.Completed,r.Total) %>%;border-radius:5px;"></div>
+          </div>
+          <div class="d-flex justify-content-between mt-1">
+            <span style="font-size:0.7rem;color:#aaa;"><%= fmtQty(r.Total_Qty) %> req</span>
+            <span style="font-size:0.7rem;color:#28a745;font-weight:600;"><%= pct(r.Completed,r.Total) %>% done</span>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+    </div>
+
+    <!-- Operator performance table -->
+    <div class="col-12">
+      <div class="chart-card p-0">
+        <div class="px-3 pt-3 pb-2">
+          <h6 class="fw-bold mb-0" style="color:#1a1a2e;"><i class="bi bi-people-fill me-2 text-primary"></i>Operator Performance</h6>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-hover table-sm mb-0 align-middle">
+            <thead style="background:#f8f9fa;">
+              <tr style="font-size:0.7rem;text-transform:uppercase;color:#6c757d;">
+                <th class="ps-3">#</th>
+                <th>Operator</th>
+                <th class="text-center">Total Jobs</th>
+                <th class="text-center">Completed</th>
+                <th class="text-center">Completion%</th>
+                <th class="text-end">Total Produced</th>
+                <th class="text-end pe-3">Avg Job Time</th>
+              </tr>
+            </thead>
+            <tbody style="font-size:0.82rem;">
+              <% byOp.forEach((r,i) => { %>
+              <tr>
+                <td class="ps-3 text-muted"><%= i+1 %></td>
+                <td class="fw-bold" style="color:#1a1a2e;"><%= r.Operator_Name %></td>
+                <td class="text-center"><%= r.Total_Jobs %></td>
+                <td class="text-center text-success"><%= r.Completed %></td>
+                <td class="text-center">
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="progress flex-fill" style="height:6px;">
+                      <div class="progress-bar bg-success" style="width:<%= pct(r.Completed,r.Total_Jobs) %>%"></div>
+                    </div>
+                    <span style="width:35px;font-size:0.75rem;font-weight:600;color:#28a745;"><%= pct(r.Completed,r.Total_Jobs) %>%</span>
+                  </div>
+                </td>
+                <td class="text-end text-primary fw-bold"><%= fmtQty(r.Total_Produced) %></td>
+                <td class="text-end text-muted small pe-3">
+                  <%= r.Avg_Minutes ? (Math.floor(r.Avg_Minutes/60)+'h '+(r.Avg_Minutes%60)+'m') : '—' %>
+                </td>
+              </tr>
+              <% }) %>
+              <% if(!byOp.length) { %><tr><td colspan="7" class="text-center py-4 text-muted">No data</td></tr><% } %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const monthData = <%- JSON.stringify(monthly) %>;
+new Chart(document.getElementById('monthChart').getContext('2d'), {
+  type:'bar',
+  data:{
+    labels: monthData.map(r=>r.Month),
+    datasets:[
+      { label:'Total Jobs', data:monthData.map(r=>r.Total), backgroundColor:'rgba(26,115,232,0.3)', borderColor:'#1a73e8', borderWidth:1, borderRadius:3 },
+      { label:'Completed',  data:monthData.map(r=>r.Completed), backgroundColor:'rgba(40,167,69,0.7)', borderColor:'#28a745', borderWidth:1, borderRadius:3 }
+    ]
+  },
+  options:{
+    plugins:{ legend:{ labels:{color:'#495057'} } },
+    scales:{
+      x:{ ticks:{color:'#6c757d'}, grid:{color:'#f0f0f0'} },
+      y:{ ticks:{color:'#6c757d',stepSize:1}, grid:{color:'#f0f0f0'}, beginAtZero:true }
+    }
+  }
+});
+</script>
+<%- include('../partials/footer') %>

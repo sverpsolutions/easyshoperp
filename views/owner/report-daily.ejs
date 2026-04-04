@@ -1,0 +1,136 @@
+<%- include('../partials/header') %>
+<% function fmtQty(n){ return Number(n||0).toLocaleString(); } %>
+
+<div class="container-fluid p-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="fw-bold mb-0" style="color:#1a1a2e;">
+      <i class="bi bi-calendar-check me-2" style="color:#28a745;"></i>DAILY PRODUCTION REPORT
+    </h5>
+    <a href="/owner/reports" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left me-1"></i>Back
+    </a>
+  </div>
+
+  <!-- Filter -->
+  <form class="chart-card mb-3" method="GET">
+    <div class="row g-2 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label fw-bold small">FROM DATE</label>
+        <input type="date" name="from" value="<%= from %>" class="form-control">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label fw-bold small">TO DATE</label>
+        <input type="date" name="to" value="<%= to %>" class="form-control">
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100">
+          <i class="bi bi-search me-1"></i>Filter
+        </button>
+      </div>
+      <div class="col-md-2">
+        <button type="button" class="btn btn-outline-success w-100" onclick="exportCSV()">
+          <i class="bi bi-file-earmark-excel me-1"></i>Export CSV
+        </button>
+      </div>
+    </div>
+  </form>
+
+  <!-- Summary -->
+  <% const totalQty = rows.reduce((s,r)=>s+(r.Total_Qty||0),0); %>
+  <div class="row g-2 mb-3">
+    <div class="col-6 col-md-3">
+      <div class="stat-card production">
+        <div class="stat-value"><%= fmtQty(totalQty) %></div>
+        <div class="stat-label">TOTAL UNITS</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card operators">
+        <div class="stat-value"><%= rows.length %></div>
+        <div class="stat-label">ENTRIES</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card idle">
+        <div class="stat-value"><%= [...new Set(rows.map(r=>r.Operator_Name))].length %></div>
+        <div class="stat-label">OPERATORS</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card running">
+        <div class="stat-value"><%= [...new Set(rows.map(r=>r.Job_Number))].length %></div>
+        <div class="stat-label">JOBS RUN</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-card p-0">
+    <div class="table-responsive">
+      <table class="table table-hover table-sm mb-0 align-middle" id="reportTable">
+        <thead style="background:#f8f9fa; position:sticky; top:0;">
+          <tr style="font-size:0.72rem; text-transform:uppercase; color:#6c757d;">
+            <th class="ps-3">Date</th>
+            <th>Job #</th>
+            <th>Customer</th>
+            <th>Size</th>
+            <th>Label</th>
+            <th>Paper / Gap</th>
+            <th>Label Type</th>
+            <th>Machine</th>
+            <th>Operator</th>
+            <th class="text-end pe-3">Qty Produced</th>
+          </tr>
+        </thead>
+        <tbody style="font-size:0.82rem;">
+          <% rows.forEach(r => { %>
+          <tr>
+            <td class="ps-3 text-muted small"><%= new Date(r.Production_Date).toLocaleDateString('en-IN') %></td>
+            <td><strong style="color:#1a73e8;"><%= r.Job_Number %></strong></td>
+            <td><%= r.Customer_Name %></td>
+            <td><span class="badge bg-light text-dark border"><%= r.Size||'—' %></span></td>
+            <td class="text-muted small"><%= r.Label||'—' %></td>
+            <td class="text-muted small"><%= r.Paper||'—' %> · <%= r.Gap_Type||'—' %></td>
+            <td>
+              <span class="badge <%= r.Label_Type==='Printed'?'bg-primary':'bg-secondary' %>">
+                <%= r.Label_Type %>
+              </span>
+            </td>
+            <td class="text-muted small"><%= r.Machine_Name %></td>
+            <td style="color:#1a73e8;" class="small"><%= r.Operator_Name %></td>
+            <td class="text-end pe-3 text-success fw-bold"><%= fmtQty(r.Total_Qty) %></td>
+          </tr>
+          <% }) %>
+          <% if(!rows.length) { %>
+          <tr><td colspan="10" class="text-center text-muted py-5">
+            <i class="bi bi-inbox fs-2 d-block mb-2"></i>No data for selected date range
+          </td></tr>
+          <% } %>
+          <% if(rows.length > 0) { %>
+          <tr style="background:#f0f7ff; font-weight:700;">
+            <td colspan="9" class="ps-3" style="color:#1a1a2e;">TOTAL</td>
+            <td class="text-end pe-3" style="color:#1a73e8;"><%= fmtQty(totalQty) %></td>
+          </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+function exportCSV() {
+  const rows = document.querySelectorAll('#reportTable tbody tr');
+  let csv = 'Date,Job#,Customer,Size,Label,Paper/Gap,Label Type,Machine,Operator,Qty\n';
+  rows.forEach(row => {
+    const cells = row.querySelectorAll('td');
+    if (cells.length >= 10) {
+      csv += Array.from(cells).map(c => `"${c.textContent.trim()}"`).join(',') + '\n';
+    }
+  });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download = `production_<%= from %>_<%= to %>.csv`;
+  a.click();
+}
+</script>
+<%- include('../partials/footer') %>

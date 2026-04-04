@@ -1,0 +1,588 @@
+<%- include('../partials/header') %>
+
+<style>
+.stat-card { cursor:pointer; transition:transform 0.15s, box-shadow 0.15s, border-width 0.1s; }
+.stat-card:hover { transform:translateY(-3px); box-shadow:0 6px 20px rgba(0,0,0,0.15); }
+.stat-card.active-filter { box-shadow:0 0 0 3px rgba(26,115,232,0.5) !important; transform:translateY(-2px); }
+#machineFilterBadge { display:none; }
+</style>
+
+<div class="container-fluid p-3">
+
+  <!-- SUMMARY STATS (clickable filters) -->
+  <div class="row g-2 mb-3">
+    <div class="col-6 col-md-3 col-xl">
+      <div class="stat-card running" onclick="filterMachines('Running')" title="Click to filter Running machines">
+        <div class="stat-value" id="stat-running"><%= summary.Running %></div>
+        <div class="stat-label"><i class="bi bi-play-circle-fill me-1"></i>RUNNING</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl">
+      <div class="stat-card idle" onclick="filterMachines('Idle')" title="Click to filter Idle machines">
+        <div class="stat-value" id="stat-idle"><%= summary.Idle %></div>
+        <div class="stat-label"><i class="bi bi-pause-circle me-1"></i>IDLE</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl">
+      <div class="stat-card stopped" onclick="filterMachines('Stopped')" title="Click to filter Stopped machines">
+        <div class="stat-value" id="stat-stopped"><%= summary.Stopped||0 %></div>
+        <div class="stat-label"><i class="bi bi-stop-circle me-1"></i>STOPPED</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl">
+      <div class="stat-card maintenance" onclick="filterMachines('Maintenance')" title="Click to filter Maintenance machines">
+        <div class="stat-value" id="stat-maintenance"><%= summary.Maintenance %></div>
+        <div class="stat-label"><i class="bi bi-wrench me-1"></i>MAINTENANCE</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl">
+      <div class="stat-card operators" onclick="filterMachines('all')" style="cursor:pointer;">
+        <div class="stat-value" id="stat-operators"><%= operatorsOnline %></div>
+        <div class="stat-label"><i class="bi bi-people-fill me-1"></i>OPERATORS ON</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl">
+      <div class="stat-card production">
+        <div class="stat-value" id="stat-production"><%= todayProd.toLocaleString() %></div>
+        <div class="stat-label"><i class="bi bi-box-seam me-1"></i>TODAY PROD</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl">
+      <div class="stat-card pending" onclick="filterMachines('all')">
+        <div class="stat-value" id="stat-pending"><%= pendingJobs %></div>
+        <div class="stat-label"><i class="bi bi-clock-history me-1"></i>PENDING JOBS</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3 col-xl">
+      <div class="stat-card utilization">
+        <div class="stat-value" id="stat-util"><%= summary.Utilization %>%</div>
+        <div class="stat-label"><i class="bi bi-speedometer2 me-1"></i>UTILIZATION</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TITLE BAR -->
+  <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <h5 class="mb-0 fw-bold" style="color:#1a1a2e;">
+      <i class="bi bi-building-gear me-2" style="color:#f59e0b;"></i>FACTORY FLOOR — LIVE STATUS
+    </h5>
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <span id="machineFilterBadge" class="badge bg-primary d-flex align-items-center gap-1">
+        <i class="bi bi-funnel-fill"></i>
+        <span id="filterLabel">All</span>
+        <button onclick="filterMachines('all')" class="btn-close btn-close-white ms-1" style="font-size:0.6rem;"></button>
+      </span>
+      <span class="live-dot"></span>
+      <span class="text-success small fw-bold">LIVE</span>
+      <span class="text-muted small" id="lastUpdate">Loading...</span>
+      <a href="/attendance" class="btn btn-sm btn-outline-info fw-bold position-relative">
+        <i class="bi bi-calendar-check me-1"></i>Attendance
+        <span id="attBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display:none;font-size:0.6rem;"></span>
+      </a>
+      <a href="/owner/advances" class="btn btn-sm btn-outline-warning fw-bold position-relative" id="advBtn">
+        <i class="bi bi-cash-stack me-1"></i>Advances
+        <% if(pendingAdvances && pendingAdvances.length){ %>
+        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.6rem;"><%= pendingAdvances.length %></span>
+        <% } %>
+        <span id="advBadgeLive" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display:none;font-size:0.6rem;"></span>
+      </a>
+      <a href="/owner/jobs"           class="btn btn-sm btn-outline-primary"><i class="bi bi-list-check me-1"></i>Jobs</a>
+      <a href="/owner/reports"        class="btn btn-sm btn-outline-secondary"><i class="bi bi-bar-chart me-1"></i>Reports</a>
+      <a href="/owner/reports/impressions" class="btn btn-sm btn-outline-warning"><i class="bi bi-speedometer me-1"></i>Impressions</a>
+    </div>
+  </div>
+
+  <!-- MACHINE GRID -->
+  <div class="row g-2" id="machineGrid">
+    <% machines.forEach(m => { %>
+    <%- include('../partials/machine-card', { m }) %>
+    <% }) %>
+  </div>
+
+  <!-- NO MACHINES IN FILTER -->
+  <div id="emptyFilter" class="text-center py-5 d-none">
+    <i class="bi bi-search" style="font-size:3rem;color:#adb5bd;"></i>
+    <h5 class="mt-3 text-muted">No <span id="emptyFilterLabel"></span> machines</h5>
+    <button class="btn btn-outline-primary mt-2" onclick="filterMachines('all')">Show All</button>
+  </div>
+
+  <!-- ══ LIVE NOTIFICATION PANEL ══ -->
+  <div id="notifPanel" class="mb-3 mt-3" style="display:none;">
+    <div class="p-0" style="border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.12);">
+      <!-- Header -->
+      <div class="d-flex align-items-center justify-content-between px-3 py-2" style="background:linear-gradient(135deg,#1a1a2e,#16213e);">
+        <div class="d-flex align-items-center gap-2">
+          <span class="live-dot"></span>
+          <span class="text-white fw-bold small">LIVE ALERTS</span>
+          <span id="notifCount" class="badge bg-danger">0</span>
+        </div>
+        <button class="btn btn-sm btn-outline-light py-0 px-2" style="font-size:0.7rem;" onclick="clearAllNotifs()">Clear All</button>
+      </div>
+      <!-- Notifications List -->
+      <div id="notifList" style="max-height:280px;overflow-y:auto;background:#fff;"></div>
+    </div>
+  </div>
+
+  <!-- ── PENDING REQUESTS SUMMARY (SSR) ── -->
+  <% const hasAdvPending = typeof pendingAdvances !== 'undefined' && pendingAdvances.length > 0; %>
+  <% const hasJobPending = typeof pendingJobRequests !== 'undefined' && pendingJobRequests.length > 0; %>
+  <% if(hasAdvPending || hasJobPending){ %>
+  <div id="ssrRequestPanel" class="mb-3">
+    <div class="p-3 rounded" style="background:#fff;border:1.5px solid #e9ecef;box-shadow:0 2px 10px rgba(0,0,0,0.06);">
+      <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
+        <div class="fw-bold" style="color:#1a1a2e;"><i class="bi bi-inbox-fill me-2 text-warning"></i>PENDING REQUESTS
+          <span class="badge bg-danger ms-1"><%= (pendingAdvances||[]).length + (pendingJobRequests||[]).length %></span>
+        </div>
+        <div class="d-flex gap-2">
+          <a href="/owner/advances" class="btn btn-warning btn-sm fw-bold"><i class="bi bi-cash-stack me-1"></i>Advances</a>
+        </div>
+      </div>
+      <div class="row g-2">
+        <!-- Advance requests -->
+        <% (pendingAdvances||[]).slice(0,3).forEach(a=>{ %>
+        <div class="col-md-4">
+          <div class="p-2 rounded d-flex gap-2 align-items-start" style="background:#fffbf0;border:1px solid #f59e0b;">
+            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 fw-bold" style="width:34px;height:34px;background:#f59e0b;color:white;font-size:0.8rem;"><%= a.Employee_Name.charAt(0) %></div>
+            <div class="flex-fill min-w-0">
+              <div class="fw-bold small text-truncate">💰 <%= a.Employee_Name %></div>
+              <div class="text-danger fw-bold">₹<%= parseFloat(a.Amount_Requested).toLocaleString('en-IN') %></div>
+              <div class="text-muted" style="font-size:0.68rem;"><%= new Date(a.Request_Date).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) %></div>
+              <% if(a.Reason){ %><div class="text-muted" style="font-size:0.68rem;" title="<%= a.Reason %>"><%= a.Reason.substring(0,35) %><%= a.Reason.length>35?'…':'' %></div><% } %>
+            </div>
+            <a href="/owner/advances" class="btn btn-success btn-sm py-0 px-2" style="font-size:0.75rem;"><i class="bi bi-check-lg"></i></a>
+          </div>
+        </div>
+        <% }) %>
+        <!-- Job requests -->
+        <% (pendingJobRequests||[]).slice(0,3).forEach(r=>{ %>
+        <div class="col-md-4">
+          <div class="p-2 rounded d-flex gap-2 align-items-start" style="background:#f0f4ff;border:1px solid #1a73e8;">
+            <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 fw-bold" style="width:34px;height:34px;background:#1a73e8;color:white;font-size:0.8rem;"><%= r.Employee_Name.charAt(0) %></div>
+            <div class="flex-fill min-w-0">
+              <div class="fw-bold small text-truncate">📋 <%= r.Employee_Name %></div>
+              <% if(r.Machine_Name){ %><div class="small text-primary"><i class="bi bi-cpu me-1"></i><%= r.Machine_Name %></div><% } %>
+              <div class="text-muted" style="font-size:0.68rem;"><%= new Date(r.Request_Date).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) %></div>
+              <% if(r.Description){ %><div class="text-muted" style="font-size:0.68rem;" title="<%= r.Description %>"><%= r.Description.substring(0,35) %><%= r.Description.length>35?'…':'' %></div><% } %>
+            </div>
+            <button class="btn btn-primary btn-sm py-0 px-2" style="font-size:0.75rem;" onclick="ackJobReq(<%= r.Request_ID %>)" title="Acknowledge"><i class="bi bi-check-lg"></i></button>
+          </div>
+        </div>
+        <% }) %>
+        <% if((pendingAdvances||[]).length > 3 || (pendingJobRequests||[]).length > 3){ %>
+        <div class="col-12 text-center"><small class="text-muted">+ more requests — <a href="/owner/advances">View All</a></small></div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+  <% } %>
+
+  <!-- CHARTS -->
+  <div class="row g-3 mt-2">
+    <div class="col-md-4">
+      <div class="chart-card">
+        <h6 class="fw-bold mb-3" style="color:#1a1a2e;"><i class="bi bi-pie-chart-fill me-2" style="color:#f59e0b;"></i>Machine Status</h6>
+        <canvas id="statusChart" height="180"></canvas>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="chart-card">
+        <h6 class="fw-bold mb-3" style="color:#1a1a2e;"><i class="bi bi-bar-chart-fill me-2" style="color:#1a73e8;"></i>Auto vs Manual</h6>
+        <canvas id="typeChart" height="180"></canvas>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="chart-card">
+        <h6 class="fw-bold mb-3" style="color:#1a1a2e;"><i class="bi bi-graph-up me-2" style="color:#28a745;"></i>7-Day Production</h6>
+        <canvas id="prodChart" height="180"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MACHINE DETAIL MODAL -->
+<div class="modal fade" id="machineModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content" style="border-radius:14px;">
+      <div class="modal-header" style="background:#f8f9fa;border-radius:14px 14px 0 0;">
+        <h5 class="modal-title fw-bold" id="modalTitle" style="color:#1a1a2e;">Machine Detail</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="modalBody">
+        <div class="text-center py-4"><div class="spinner-border text-primary"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Initial data for charts
+const _chartData = <%- chartData %>;
+
+// ── Charts ─────────────────────────────────────────────────
+const statusChart = new Chart(document.getElementById('statusChart').getContext('2d'), {
+  type:'doughnut',
+  data:{
+    labels:['Running','Idle','Stopped','Maintenance'],
+    datasets:[{ data:[_chartData.filter(m=>m.status==='Running').length,
+                      _chartData.filter(m=>m.status==='Idle').length,
+                      _chartData.filter(m=>m.status==='Stopped').length,
+                      _chartData.filter(m=>m.status==='Maintenance').length],
+      backgroundColor:['#28a745','#ffc107','#dc3545','#17a2b8'], borderWidth:2, borderColor:'#fff' }]
+  },
+  options:{ plugins:{ legend:{ labels:{ color:'#495057', boxWidth:12 } } } }
+});
+
+const typeChart = new Chart(document.getElementById('typeChart').getContext('2d'), {
+  type:'bar',
+  data:{
+    labels:['Auto','Manual'],
+    datasets:[{ label:'Machines',
+      data:[_chartData.filter(m=>m.type==='Auto').length, _chartData.filter(m=>m.type==='Manual').length],
+      backgroundColor:['#1a73e8','#6f42c1'], borderRadius:6 }]
+  },
+  options:{ plugins:{legend:{display:false}},
+    scales:{ x:{ticks:{color:'#6c757d'},grid:{color:'#f0f0f0'}},
+             y:{ticks:{color:'#6c757d',stepSize:1},grid:{color:'#f0f0f0'},beginAtZero:true} } }
+});
+
+fetch('/api/production/chart').then(r=>r.json()).then(data=>{
+  new Chart(document.getElementById('prodChart').getContext('2d'),{
+    type:'line',
+    data:{ labels:data.map(d=>d.Date?String(d.Date).substr(5,5):''),
+           datasets:[{label:'Units',data:data.map(d=>d.Total),
+                      borderColor:'#28a745',backgroundColor:'rgba(40,167,69,0.15)',fill:true,tension:0.4}] },
+    options:{ plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#6c757d'},grid:{color:'#f0f0f0'}},
+              y:{ticks:{color:'#6c757d'},grid:{color:'#f0f0f0'},beginAtZero:true}} }
+  });
+}).catch(()=>{});
+
+// ── Machine card builder ────────────────────────────────────
+function buildMachineCard(m) {
+  const sl = (m.Status||'idle').toLowerCase();
+  const pct = m.Job_Progress||0;
+  const h   = Math.floor((m.Run_Minutes||0)/60);
+  const mn  = (m.Run_Minutes||0)%60;
+  const icons  = {running:'bi-play-fill',idle:'bi-pause-fill',stopped:'bi-stop-fill',maintenance:'bi-wrench'};
+  const labels = {running:'RUNNING',idle:'IDLE',stopped:'STOPPED',maintenance:'MAINT.'};
+  const tb = m.Machine_Type==='Auto' ? 'badge-auto' : 'badge-manual';
+  return `<div class="col-6 col-md-4 col-lg-3 col-xl-2 machine-col" data-status="${sl}">
+    <div class="machine-card status-${sl}" id="mcard-${m.Machine_ID}" data-machine="${m.Machine_ID}"
+         onclick="showMachineDetail(${m.Machine_ID})" style="cursor:pointer;">
+      <div class="machine-header">
+        <span class="machine-name">${m.Machine_Name}</span>
+        <span class="machine-type-badge ${tb}">${m.Machine_Type}</span>
+      </div>
+      <div class="machine-status-indicator status-${sl}">
+        <i class="bi ${icons[sl]||'bi-circle'}"></i> ${labels[sl]||m.Status}
+      </div>
+      <div class="machine-info">
+        <div class="info-row"><i class="bi bi-person-fill" style="color:#1a73e8;"></i><span>${m.Operator_Name||'—'}</span></div>
+        <div class="info-row"><i class="bi bi-tag-fill text-primary"></i><span>${m.Job_Number||'No Job'}</span></div>
+        ${pct>0?`<div class="progress-mini mt-1"><div class="progress-bar-mini" style="width:${pct}%"></div></div>
+        <div class="text-center" style="font-size:0.65rem;color:#888;">${pct}%</div>`:''}
+        ${(m.Run_Minutes||0)>0?`<div class="info-row mt-1"><i class="bi bi-clock text-success"></i>
+        <span class="run-timer" data-start-mins="${m.Run_Minutes}">${h}h ${mn}m</span></div>`:''}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── Filter machines by status ────────────────────────────── 
+let _currentFilter = 'all';
+let _allMachineData = [];
+
+function filterMachines(status) {
+  _currentFilter = status;
+  // Update stat card highlights
+  document.querySelectorAll('.stat-card').forEach(c=>c.classList.remove('active-filter'));
+  if (status !== 'all') {
+    const map = {Running:'running',Idle:'idle',Stopped:'stopped',Maintenance:'maintenance'};
+    const match = map[status];
+    if (match) {
+      document.querySelectorAll('.stat-card.'+match).forEach(c=>c.classList.add('active-filter'));
+    }
+  }
+  // Update filter badge
+  const badge = document.getElementById('machineFilterBadge');
+  if (status === 'all') {
+    badge.style.display = 'none';
+  } else {
+    badge.style.display = 'flex';
+    document.getElementById('filterLabel').textContent = status + ' Machines';
+  }
+  applyFilter();
+}
+
+function applyFilter() {
+  const cols = document.querySelectorAll('.machine-col');
+  let visible = 0;
+  cols.forEach(col => {
+    const s = col.dataset.status;
+    const show = _currentFilter === 'all' || s === _currentFilter.toLowerCase();
+    col.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+  const empty = document.getElementById('emptyFilter');
+  if (visible === 0 && _currentFilter !== 'all') {
+    empty.classList.remove('d-none');
+    document.getElementById('emptyFilterLabel').textContent = _currentFilter;
+  } else {
+    empty.classList.add('d-none');
+  }
+}
+
+// ── Full dashboard refresh ──────────────────────────────────
+async function refreshDashboard() {
+  try {
+    const data = await fetch('/api/dashboard').then(r=>r.json());
+    if (data.error) return;
+    _allMachineData = data.machines;
+    document.getElementById('stat-running').textContent     = data.summary.Running;
+    document.getElementById('stat-idle').textContent       = data.summary.Idle;
+    document.getElementById('stat-stopped').textContent    = data.summary.Stopped||0;
+    document.getElementById('stat-maintenance').textContent = data.summary.Maintenance;
+    document.getElementById('stat-production').textContent  = Number(data.todayProd||0).toLocaleString();
+    document.getElementById('stat-pending').textContent    = data.pendingJobs||0;
+    document.getElementById('stat-operators').textContent  = data.operatorsOnline||0;
+    document.getElementById('stat-util').textContent       = (data.summary.Utilization||0)+'%';
+    document.getElementById('machineGrid').innerHTML       = data.machines.map(buildMachineCard).join('');
+    statusChart.data.datasets[0].data = ['Running','Idle','Stopped','Maintenance']
+      .map(s=>data.machines.filter(m=>m.Status===s).length);
+    statusChart.update('none');
+    applyFilter(); // re-apply current filter after grid rebuild
+    document.getElementById('lastUpdate').textContent = 'Updated '+new Date().toLocaleTimeString('en-IN');
+  } catch(e) { console.error('Dashboard refresh error:', e); }
+}
+
+setInterval(refreshDashboard, 10000);
+const socket = io();
+socket.on('machine-status-update', ()=>refreshDashboard());
+
+// ── Machine detail modal ────────────────────────────────────
+function showMachineDetail(id) {
+  const modal = new bootstrap.Modal(document.getElementById('machineModal'));
+  document.getElementById('modalBody').innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
+  modal.show();
+  fetch(`/owner/machine/${id}`).then(r=>r.json()).then(m=>{
+    const pct = m.Job_Progress||0;
+    const h   = Math.floor((m.Run_Minutes||0)/60);
+    const mn  = (m.Run_Minutes||0)%60;
+    const sb  = m.Status==='Running'
+      ? '<span class="badge bg-success">Running</span>'
+      : m.Status==='Idle' ? '<span class="badge bg-warning text-dark">Idle</span>'
+      : `<span class="badge bg-danger">${m.Status}</span>`;
+    document.getElementById('modalTitle').innerHTML =
+      `<i class="bi bi-cpu me-2" style="color:#1a73e8;"></i>${m.Machine_Name} — ${sb}`;
+    document.getElementById('modalBody').innerHTML = `
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="detail-group">
+            <div class="detail-item"><span>Machine Type</span><strong>${m.Machine_Type}</strong></div>
+            <div class="detail-item"><span>Operator</span><strong>${m.Operator_Name||'—'}</strong></div>
+            <div class="detail-item"><span>Job Number</span><strong style="color:#1a73e8;">${m.Job_Number||'—'}</strong></div>
+            <div class="detail-item"><span>Customer</span><strong>${m.Customer_Name||'—'}</strong></div>
+            <div class="detail-item"><span>Label / Size</span><strong>${m.Label||'—'} · ${m.Size||'—'}</strong></div>
+            <div class="detail-item"><span>Paper / Gap</span><strong>${m.Paper||'—'} · ${m.Gap_Type||'—'}</strong></div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="detail-group">
+            <div class="detail-item"><span>Required Qty</span><strong>${Number(m.Required_Qty||0).toLocaleString()}</strong></div>
+            <div class="detail-item"><span>Produced Qty</span><strong style="color:#28a745;">${Number(m.Produced_Qty||0).toLocaleString()}</strong></div>
+            <div class="detail-item"><span>Remaining</span><strong style="color:#dc3545;">${Math.max(0,(m.Required_Qty||0)-(m.Produced_Qty||0)).toLocaleString()}</strong></div>
+            <div class="detail-item"><span>Progress</span><strong>${pct}%</strong></div>
+          </div>
+          <div class="progress my-2" style="height:10px;border-radius:5px;">
+            <div class="progress-bar bg-success" style="width:${pct}%;border-radius:5px;"></div>
+          </div>
+          <div class="detail-group mt-2">
+            <div class="detail-item"><span>Run Time</span><strong>${h}h ${mn}m</strong></div>
+            <div class="detail-item"><span>Efficiency Today</span><strong>${m.Machine_Efficiency||0}%</strong></div>
+            <div class="detail-item"><span>Start Time</span><strong>${m.Start_Time?new Date(m.Start_Time).toLocaleString('en-IN'):'—'}</strong></div>
+          </div>
+          <div class="mt-3 d-flex gap-2">
+            <a href="/owner/reports/impressions?machine_id=${id}" class="btn btn-sm btn-outline-warning w-100">
+              <i class="bi bi-speedometer me-1"></i>Hourly Impressions
+            </a>
+          </div>
+        </div>
+      </div>`;
+  }).catch(()=>{
+    document.getElementById('modalBody').innerHTML = '<div class="alert alert-danger">Failed to load data.</div>';
+  });
+}
+
+setInterval(()=>{
+  document.querySelectorAll('.run-timer').forEach(el=>{
+    let m=parseInt(el.dataset.startMins||0)+1;
+    el.dataset.startMins=m;
+    el.textContent=`${Math.floor(m/60)}h ${m%60}m`;
+  });
+}, 60000);
+
+// ══ REAL-TIME NOTIFICATIONS ══════════════════════════════
+
+const _notifs = [];   // in-memory notification store
+let _unreadCount = 0;
+
+function fmt(iso){
+  if(!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+}
+
+function addNotif(data) {
+  _notifs.unshift(data);          // newest first
+  _unreadCount++;
+  renderNotifPanel();
+  showToastAlert(data);
+  updateBadges();
+}
+
+function renderNotifPanel() {
+  const panel = document.getElementById('notifPanel');
+  const list  = document.getElementById('notifList');
+  const count = document.getElementById('notifCount');
+  if (!_notifs.length) { panel.style.display='none'; return; }
+  panel.style.display = 'block';
+  count.textContent = _notifs.length;
+  list.innerHTML = _notifs.map((n, idx) => {
+    const isAdv = n.type === 'advance';
+    const icon  = isAdv ? '💰' : '📋';
+    const color = isAdv ? '#f59e0b' : '#1a73e8';
+    const bg    = isAdv ? '#fffbf0' : '#f0f4ff';
+    const detail = isAdv
+      ? `<span class="fw-bold text-danger">₹${parseFloat(n.amount||0).toLocaleString('en-IN')}</span>${n.reason?' — <em class="text-muted">'+n.reason.substring(0,40)+'</em>':''}`
+      : `${n.machine_name?'<span class="badge bg-primary me-1">'+n.machine_name+'</span>':''}${n.description?'<em class="text-muted">'+n.description.substring(0,50)+'</em>':''}`;
+    const ackBtn = isAdv
+      ? `<a href="/owner/advances" class="btn btn-sm btn-warning py-0 px-2 fw-bold" style="font-size:0.75rem;white-space:nowrap;">Approve →</a>`
+      : `<button class="btn btn-sm btn-primary py-0 px-2" style="font-size:0.75rem;" onclick="ackNotifJobReq(${n.request_id||0},${idx})">✓ Ack</button>`;
+    return `<div class="d-flex align-items-start gap-2 px-3 py-2 border-bottom" style="background:${bg};" id="notif-${idx}">
+      <div class="fs-5 flex-shrink-0">${icon}</div>
+      <div class="flex-fill min-w-0">
+        <div class="fw-bold small" style="color:${color};">${n.employee_name}</div>
+        <div class="small">${detail}</div>
+        <div class="text-muted" style="font-size:0.68rem;">${fmt(n.timestamp)}</div>
+      </div>
+      <div class="flex-shrink-0">${ackBtn}</div>
+    </div>`;
+  }).join('');
+}
+
+function clearAllNotifs() {
+  _notifs.length = 0;
+  _unreadCount = 0;
+  document.getElementById('notifPanel').style.display = 'none';
+  updateBadges();
+}
+
+function updateBadges() {
+  const advCount = _notifs.filter(n=>n.type==='advance').length;
+  const badge = document.getElementById('advBadgeLive');
+  if(badge){
+    badge.textContent = advCount || '';
+    badge.style.display = advCount > 0 ? 'inline' : 'none';
+  }
+}
+
+function showToastAlert(data) {
+  // Create toast popup
+  const toastId = 'toast_' + Date.now();
+  const isAdv = data.type === 'advance';
+  const color = isAdv ? '#f59e0b' : '#1a73e8';
+  const icon  = isAdv ? 'bi-cash-stack' : 'bi-clipboard-plus';
+  const title = isAdv
+    ? `New Advance Request — ₹${parseFloat(data.amount||0).toLocaleString('en-IN')}`
+    : `New Job Request${data.machine_name?' — '+data.machine_name:''}`;
+  const body  = isAdv
+    ? `<strong>${data.employee_name}</strong> requests ₹${parseFloat(data.amount||0).toLocaleString('en-IN')}${data.reason?'<br><small class="text-muted">'+data.reason+'</small>':''}`
+    : `<strong>${data.employee_name}</strong>${data.machine_name?' on <strong>'+data.machine_name+'</strong>':''}<br><small class="text-muted">${data.description||''}</small>`;
+
+  const toast = document.createElement('div');
+  toast.id = toastId;
+  toast.style.cssText = 'position:fixed;top:70px;right:20px;z-index:9999;min-width:320px;max-width:380px;animation:slideInRight 0.4s ease;';
+  toast.innerHTML = `
+    <div class="toast show shadow-lg" style="border-left:4px solid ${color};border-radius:10px;">
+      <div class="toast-header" style="background:${color}15;border-bottom:1px solid ${color}30;">
+        <i class="bi ${icon} me-2" style="color:${color};font-size:1rem;"></i>
+        <strong class="me-auto" style="color:${color};">${title}</strong>
+        <small class="text-muted">${new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}</small>
+        <button class="btn-close ms-2" onclick="document.getElementById('${toastId}').remove()"></button>
+      </div>
+      <div class="toast-body" style="background:white;border-radius:0 0 10px 10px;">
+        ${body}
+        <div class="mt-2">${isAdv
+          ? `<a href="/owner/advances" class="btn btn-sm btn-warning fw-bold">Review →</a>`
+          : `<a href="/owner/jobs" class="btn btn-sm btn-primary fw-bold">Assign Job →</a>`}
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(toast);
+
+  // Play alert sound (silent beep via Web Audio API)
+  try {
+    const ctx = new (window.AudioContext||window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = isAdv ? 880 : 660;
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.4);
+  } catch(e) {}
+
+  // Auto-dismiss after 8s
+  setTimeout(() => { const el=document.getElementById(toastId); if(el) el.remove(); }, 8000);
+}
+
+// Acknowledge job request
+function ackJobReq(id) {
+  fetch('/operator/job-request/'+id+'/ack', {method:'POST'})
+    .then(()=>{ loadPendingRequests(); })
+    .catch(()=>{});
+}
+function ackNotifJobReq(id, idx) {
+  if(id) fetch('/operator/job-request/'+id+'/ack', {method:'POST'}).catch(()=>{});
+  _notifs.splice(idx, 1);
+  renderNotifPanel();
+  updateBadges();
+}
+
+// Socket.io real-time events
+socket.on('new-advance-request', data => { addNotif(data); });
+socket.on('new-job-request',     data => { addNotif(data); });
+
+// Poll for existing pending requests on load + every 30s
+async function loadPendingRequests() {
+  try {
+    const data = await fetch('/api/pending-requests').then(r=>r.json());
+    const panel = document.getElementById('ssrRequestPanel');
+    // Update SSR panel counts (light refresh without full re-render)
+    if(panel) {
+      const total = (data.advances||[]).length + (data.jobRequests||[]).length;
+      const badge = panel.querySelector('.badge.bg-danger');
+      if(badge) badge.textContent = total;
+      if(total===0) panel.style.display='none';
+    }
+    // Update advance button badge
+    const advBtn = document.getElementById('advBtn');
+    if(advBtn) {
+      const n = (data.advances||[]).length;
+      let b = advBtn.querySelector('.badge-live-adv');
+      if(!b) { b=document.createElement('span'); b.className='position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger badge-live-adv'; b.style.fontSize='0.6rem'; advBtn.appendChild(b); }
+      b.textContent = n||''; b.style.display = n>0?'inline':'none';
+    }
+  } catch(e) {}
+}
+loadPendingRequests();
+setInterval(loadPendingRequests, 30000);
+
+// CSS for toast animation
+const _style = document.createElement('style');
+_style.textContent = '@keyframes slideInRight{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}';
+document.head.appendChild(_style);
+</script>
+
+<%- include('../partials/footer') %>

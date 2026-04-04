@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>License Expired — Barcode MES</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <style>
+    body { background: linear-gradient(135deg, #1a0000, #3d0000, #1a0000); min-height:100vh; display:flex; align-items:center; justify-content:center; font-family:'Segoe UI',sans-serif; }
+    .exp-card { background:white; border-radius:20px; max-width:480px; width:100%; overflow:hidden; box-shadow:0 30px 80px rgba(0,0,0,0.6); }
+    .exp-header { background:linear-gradient(135deg,#dc3545,#6f1019); padding:35px; text-align:center; }
+    .machine-id { font-family:monospace; background:#fff3cd; border:1px dashed #ffc107; border-radius:8px; padding:8px 14px; font-size:0.85rem; letter-spacing:2px; color:#856404; }
+  </style>
+</head>
+<body>
+<div class="exp-card">
+  <div class="exp-header">
+    <i class="bi bi-shield-x" style="font-size:3.5rem;color:rgba(255,255,255,0.9);"></i>
+    <h4 class="text-white fw-bold mt-3 mb-1">License Expired</h4>
+    <p class="text-white-50 mb-0">Your subscription has ended</p>
+  </div>
+  <div class="p-4">
+    <div class="alert alert-danger text-center mb-4">
+      <strong>Barcode MES is locked</strong><br>
+      <small>Your license expired on <strong><%= new Date(license.expiryDate).toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'}) %></strong></small>
+    </div>
+    <% if(license.registeredName){ %>
+    <div class="mb-3 p-3 rounded" style="background:#f8f9fa;">
+      <div class="small"><i class="bi bi-person me-1"></i><strong>Registered to:</strong> <%= license.registeredName %></div>
+      <div class="small"><i class="bi bi-building me-1"></i><strong>Company:</strong> <%= license.registeredCompany %></div>
+    </div>
+    <% } %>
+    <div class="mb-4 text-center">
+      <div class="text-muted small mb-2">Your Machine ID (share with vendor to renew):</div>
+      <div class="machine-id"><%= machineId %></div>
+    </div>
+    <div class="text-center mb-3">
+      <p class="text-muted small">Contact your vendor to renew your subscription and get a new license key.</p>
+      <a href="/register" class="btn btn-warning fw-bold px-5 py-2">
+        <i class="bi bi-key me-2"></i>Enter New License Key
+      </a>
+    </div>
+    <div class="text-center pt-3 border-top">
+      <small class="text-muted"><i class="bi bi-whatsapp text-success me-1"></i>Contact vendor for renewal</small>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
