@@ -5,10 +5,10 @@ class Job_model extends CI_Model {
 
     public function get_all($filters = []) {
         $this->db->select('j.*, m.Machine_Name, e.Name AS Operator_Name')
-                 ->from('Jobs j')
-                 ->join('Machines e2',   'e2.Machine_ID = j.Assigned_Machine_ID', 'left')
-                 ->join('Machines m',    'm.Machine_ID  = j.Assigned_Machine_ID', 'left')
-                 ->join('Employees e',   'e.Employee_ID = j.Assigned_Operator_ID', 'left');
+                 ->from('jobs j')
+                 ->join('machines e2',   'e2.Machine_ID = j.Assigned_Machine_ID', 'left')
+                 ->join('machines m',    'm.Machine_ID  = j.Assigned_Machine_ID', 'left')
+                 ->join('employees e',   'e.Employee_ID = j.Assigned_Operator_ID', 'left');
 
         if (!empty($filters['status']))   $this->db->where('j.Status', $filters['status']);
         if (!empty($filters['customer'])) $this->db->like('j.Customer_Name', $filters['customer']);
@@ -20,17 +20,17 @@ class Job_model extends CI_Model {
 
     public function get_by_id($id) {
         return $this->db->select('j.*, m.Machine_Name, e.Name AS Operator_Name')
-                        ->from('Jobs j')
-                        ->join('Machines m',  'm.Machine_ID  = j.Assigned_Machine_ID', 'left')
-                        ->join('Employees e', 'e.Employee_ID = j.Assigned_Operator_ID', 'left')
+                        ->from('jobs j')
+                        ->join('machines m',  'm.Machine_ID  = j.Assigned_Machine_ID', 'left')
+                        ->join('employees e', 'e.Employee_ID = j.Assigned_Operator_ID', 'left')
                         ->where('j.Job_ID', $id)
                         ->get()->row_array();
     }
 
     public function get_pending_for_operator($operator_id) {
         return $this->db->select('j.*, m.Machine_Name')
-                        ->from('Jobs j')
-                        ->join('Machines m', 'm.Machine_ID = j.Assigned_Machine_ID', 'left')
+                        ->from('jobs j')
+                        ->join('machines m', 'm.Machine_ID = j.Assigned_Machine_ID', 'left')
                         ->where('j.Assigned_Operator_ID', $operator_id)
                         ->where_in('j.Status', ['Assigned', 'Running', 'Pending'])
                         ->order_by('j.Priority ASC, j.Order_Date ASC')

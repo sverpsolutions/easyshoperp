@@ -201,6 +201,19 @@ $route['api/serials/sell/(:num)']          = 'serials/sell/$1';
 $route['api/serials/update/(:num)']        = 'serials/update/$1';
 $route['api/serials/delete/(:num)']        = 'serials/delete/$1';
 
+// ── Customer Portal ───────────────────────────────────────────
+$route['api/portal/login']                        = 'portal/login';
+$route['api/portal/logout']                       = 'portal/logout';
+$route['api/portal/me']                           = 'portal/me';
+$route['api/portal/dashboard']                    = 'portal/dashboard';
+$route['api/portal/orders']                       = 'portal/orders';
+$route['api/portal/orders/store']                 = 'portal/order_store';
+$route['api/portal/orders/(:num)']                = 'portal/order_show/$1';
+$route['api/portal/jobs']                         = 'portal/jobs';
+$route['api/portal/bills']                        = 'portal/bills';
+$route['api/portal/admin/orders']                 = 'portal/admin_orders';
+$route['api/portal/admin/orders/review/(:num)']   = 'portal/admin_review/$1';
+
 // ── Services (Hardware Service Records) ───────────────────────
 $route['api/services']                     = 'services/index';
 $route['api/services/open-count']          = 'services/open_count';

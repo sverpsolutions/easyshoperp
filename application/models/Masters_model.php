@@ -13,17 +13,17 @@ class Masters_model extends CI_Model {
     // ═══════════════════════════════════════════════════════════
 
     public function get_company() {
-        return $this->db->order_by('Company_ID')->limit(1)->get('company_master')->row_array();
+        return $this->db->order_by('Company_ID')->limit(1)->get('Company_Master')->row_array();
     }
 
     public function save_company($data) {
-        $existing = $this->db->get('company_master')->row_array();
+        $existing = $this->db->get('Company_Master')->row_array();
         $data['Updated_Date'] = date('Y-m-d H:i:s');
         if ($existing) {
-            $this->db->where('Company_ID', $existing['Company_ID'])->update('company_master', $data);
+            $this->db->where('Company_ID', $existing['Company_ID'])->update('Company_Master', $data);
             return $existing['Company_ID'];
         } else {
-            $this->db->insert('company_master', $data);
+            $this->db->insert('Company_Master', $data);
             return $this->db->insert_id();
         }
     }
@@ -33,26 +33,26 @@ class Masters_model extends CI_Model {
     // ═══════════════════════════════════════════════════════════
 
     public function get_gst_list() {
-        return $this->db->where('Is_Active', 1)->order_by('Total_Pct')->get('gst_tax_master')->result_array();
+        return $this->db->where('Is_Active', 1)->order_by('Total_Pct')->get('GST_Tax_Master')->result_array();
     }
 
     public function get_gst_by_id($id) {
-        return $this->db->where('GST_Tax_ID', $id)->get('gst_tax_master')->row_array();
+        return $this->db->where('GST_Tax_ID', $id)->get('GST_Tax_Master')->row_array();
     }
 
     public function create_gst($data) {
-        $this->db->insert('gst_tax_master', $data);
+        $this->db->insert('GST_Tax_Master', $data);
         return $this->db->insert_id();
     }
 
     public function update_gst($id, $data) {
-        $this->db->where('GST_Tax_ID', $id)->update('gst_tax_master', $data);
+        $this->db->where('GST_Tax_ID', $id)->update('GST_Tax_Master', $data);
         return $this->db->affected_rows();
     }
 
     public function delete_gst($id) {
         // Soft delete
-        $this->db->where('GST_Tax_ID', $id)->update('gst_tax_master', ['Is_Active' => 0]);
+        $this->db->where('GST_Tax_ID', $id)->update('GST_Tax_Master', ['Is_Active' => 0]);
         return $this->db->affected_rows();
     }
 
@@ -62,8 +62,8 @@ class Masters_model extends CI_Model {
 
     public function get_hsn_list($search = null) {
         $this->db->select('h.*, g.Tax_Name, g.CGST_Pct, g.SGST_Pct, g.IGST_Pct, g.Total_Pct')
-                 ->from('hsn_master h')
-                 ->join('gst_tax_master g', 'g.GST_Tax_ID = h.GST_Tax_ID', 'left')
+                 ->from('HSN_Master h')
+                 ->join('GST_Tax_Master g', 'g.GST_Tax_ID = h.GST_Tax_ID', 'left')
                  ->where('h.Is_Active', 1);
         if ($search) {
             $s = $this->db->escape_like_str($search);
@@ -77,24 +77,24 @@ class Masters_model extends CI_Model {
 
     public function get_hsn_by_id($id) {
         return $this->db->select('h.*, g.Tax_Name, g.CGST_Pct, g.SGST_Pct, g.IGST_Pct, g.Total_Pct')
-                        ->from('hsn_master h')
-                        ->join('gst_tax_master g', 'g.GST_Tax_ID = h.GST_Tax_ID', 'left')
+                        ->from('HSN_Master h')
+                        ->join('GST_Tax_Master g', 'g.GST_Tax_ID = h.GST_Tax_ID', 'left')
                         ->where('h.HSN_ID', $id)
                         ->get()->row_array();
     }
 
     public function create_hsn($data) {
-        $this->db->insert('hsn_master', $data);
+        $this->db->insert('HSN_Master', $data);
         return $this->db->insert_id();
     }
 
     public function update_hsn($id, $data) {
-        $this->db->where('HSN_ID', $id)->update('hsn_master', $data);
+        $this->db->where('HSN_ID', $id)->update('HSN_Master', $data);
         return $this->db->affected_rows();
     }
 
     public function delete_hsn($id) {
-        $this->db->where('HSN_ID', $id)->update('hsn_master', ['Is_Active' => 0]);
+        $this->db->where('HSN_ID', $id)->update('HSN_Master', ['Is_Active' => 0]);
         return $this->db->affected_rows();
     }
 
@@ -103,25 +103,25 @@ class Masters_model extends CI_Model {
     // ═══════════════════════════════════════════════════════════
 
     public function get_uom_list() {
-        return $this->db->where('Is_Active', 1)->order_by('UOM_Name')->get('uom_master')->result_array();
+        return $this->db->where('Is_Active', 1)->order_by('UOM_Name')->get('UOM_Master')->result_array();
     }
 
     public function get_uom_by_id($id) {
-        return $this->db->where('UOM_ID', $id)->get('uom_master')->row_array();
+        return $this->db->where('UOM_ID', $id)->get('UOM_Master')->row_array();
     }
 
     public function create_uom($data) {
-        $this->db->insert('uom_master', $data);
+        $this->db->insert('UOM_Master', $data);
         return $this->db->insert_id();
     }
 
     public function update_uom($id, $data) {
-        $this->db->where('UOM_ID', $id)->update('uom_master', $data);
+        $this->db->where('UOM_ID', $id)->update('UOM_Master', $data);
         return $this->db->affected_rows();
     }
 
     public function delete_uom($id) {
-        $this->db->where('UOM_ID', $id)->update('uom_master', ['Is_Active' => 0]);
+        $this->db->where('UOM_ID', $id)->update('UOM_Master', ['Is_Active' => 0]);
         return $this->db->affected_rows();
     }
 
@@ -138,25 +138,25 @@ class Masters_model extends CI_Model {
                      ->or_like('Short_Code', $s)
                      ->group_end();
         }
-        return $this->db->order_by('Manufacturer_Name')->get('manufacturers')->result_array();
+        return $this->db->order_by('Manufacturer_Name')->get('Manufacturers')->result_array();
     }
 
     public function get_manufacturer_by_id($id) {
-        return $this->db->where('Manufacturer_ID', $id)->get('manufacturers')->row_array();
+        return $this->db->where('Manufacturer_ID', $id)->get('Manufacturers')->row_array();
     }
 
     public function create_manufacturer($data) {
-        $this->db->insert('manufacturers', $data);
+        $this->db->insert('Manufacturers', $data);
         return $this->db->insert_id();
     }
 
     public function update_manufacturer($id, $data) {
-        $this->db->where('Manufacturer_ID', $id)->update('manufacturers', $data);
+        $this->db->where('Manufacturer_ID', $id)->update('Manufacturers', $data);
         return $this->db->affected_rows();
     }
 
     public function delete_manufacturer($id) {
-        $this->db->where('Manufacturer_ID', $id)->update('manufacturers', ['Is_Active' => 0]);
+        $this->db->where('Manufacturer_ID', $id)->update('Manufacturers', ['Is_Active' => 0]);
         return $this->db->affected_rows();
     }
 
@@ -167,7 +167,7 @@ class Masters_model extends CI_Model {
     public function get_brand_list() {
         return $this->db->select('b.*, m.Manufacturer_Name')
                         ->from('brands b')
-                        ->join('manufacturers m', 'm.Manufacturer_ID = b.Manufacturer_ID', 'left')
+                        ->join('Manufacturers m', 'm.Manufacturer_ID = b.Manufacturer_ID', 'left')
                         ->where('b.Is_Active', 1)
                         ->order_by('b.Brand_Name')
                         ->get()->result_array();

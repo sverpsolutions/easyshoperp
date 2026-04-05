@@ -14,12 +14,12 @@ class Item_model extends CI_Model {
             isc.Subcategory_Name,
             b.Brand_Name
         ')
-        ->from('Item_Master im')
-        ->join('Item_Groups ig',       'ig.Group_ID = im.Group_ID',            'left')
-        ->join('Item_Subgroups isg',   'isg.Subgroup_ID = im.Subgroup_ID',     'left')
-        ->join('Item_Categories ic',   'ic.Category_ID = im.Category_ID',      'left')
-        ->join('Item_Subcategories isc','isc.Subcategory_ID = im.Subcategory_ID','left')
-        ->join('Brands b',             'b.Brand_ID = im.Brand_ID',             'left');
+        ->from('item_master im')
+        ->join('item_groups ig',       'ig.Group_ID = im.Group_ID',            'left')
+        ->join('item_subgroups isg',   'isg.Subgroup_ID = im.Subgroup_ID',     'left')
+        ->join('item_categories ic',   'ic.Category_ID = im.Category_ID',      'left')
+        ->join('item_subcategories isc','isc.Subcategory_ID = im.Subcategory_ID','left')
+        ->join('brands b',             'b.Brand_ID = im.Brand_ID',             'left');
 
         if (!empty($filters['group_id']))    $this->db->where('im.Group_ID', $filters['group_id']);
         if (!empty($filters['item_type']))   $this->db->where('im.Item_Type', $filters['item_type']);
@@ -39,12 +39,12 @@ class Item_model extends CI_Model {
 
     public function get_by_id($id) {
         return $this->db->select('im.*, ig.Group_Name, isg.Subgroup_Name, ic.Category_Name, isc.Subcategory_Name, b.Brand_Name')
-            ->from('Item_Master im')
-            ->join('Item_Groups ig',        'ig.Group_ID = im.Group_ID',             'left')
-            ->join('Item_Subgroups isg',    'isg.Subgroup_ID = im.Subgroup_ID',      'left')
-            ->join('Item_Categories ic',    'ic.Category_ID = im.Category_ID',       'left')
-            ->join('Item_Subcategories isc','isc.Subcategory_ID = im.Subcategory_ID','left')
-            ->join('Brands b',              'b.Brand_ID = im.Brand_ID',              'left')
+            ->from('item_master im')
+            ->join('item_groups ig',        'ig.Group_ID = im.Group_ID',             'left')
+            ->join('item_subgroups isg',    'isg.Subgroup_ID = im.Subgroup_ID',      'left')
+            ->join('item_categories ic',    'ic.Category_ID = im.Category_ID',       'left')
+            ->join('item_subcategories isc','isc.Subcategory_ID = im.Subcategory_ID','left')
+            ->join('brands b',              'b.Brand_ID = im.Brand_ID',              'left')
             ->where('im.Item_ID', $id)
             ->get()->row_array();
     }

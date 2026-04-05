@@ -5,8 +5,8 @@ class Bill_model extends CI_Model {
 
     public function get_all($filters = []) {
         $this->db->select('b.*, e.Name AS Created_By_Name')
-                 ->from('Bill_Register b')
-                 ->join('Employees e', 'e.Employee_ID = b.Created_By', 'left');
+                 ->from('bill_register b')
+                 ->join('employees e', 'e.Employee_ID = b.Created_By', 'left');
         if (!empty($filters['status']))   $this->db->where('b.Payment_Status', $filters['status']);
         if (!empty($filters['customer'])) $this->db->like('b.Customer_Name', $filters['customer']);
         if (!empty($filters['from']))     $this->db->where('b.Bill_Date >=', $filters['from']);

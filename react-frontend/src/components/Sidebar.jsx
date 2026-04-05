@@ -14,8 +14,9 @@ const mainMenu = [
   { to: '/purchase',   icon: 'bi-truck',            label: 'Purchase',      color: '#0ea5e9' },
   { to: '/suppliers',  icon: 'bi-shop',             label: 'Suppliers',     color: '#a855f7' },
   { to: '/conversion', icon: 'bi-scissors',         label: 'Conversion',    color: '#14b8a6' },
-  { to: '/reports',    icon: 'bi-bar-chart-line',   label: 'Reports',       color: '#f97316' },
-  { to: '/settings',   icon: 'bi-gear',             label: 'Settings',      color: '#6b7280' },
+  { to: '/reports',        icon: 'bi-bar-chart-line',   label: 'Reports',        color: '#f97316' },
+  { to: '/portal-orders',  icon: 'bi-globe2',           label: 'Portal Orders',  color: '#0891b2' },
+  { to: '/settings',       icon: 'bi-gear',             label: 'Settings',       color: '#6b7280' },
 ]
 
 const masterMenu = [

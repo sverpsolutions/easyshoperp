@@ -28,9 +28,9 @@ class Jobs extends MY_Controller {
         if (!$job) return $this->json_error('Job not found', 404);
         // Also load production log
         $log = $this->db->select('jpl.*, e.Name AS Operator_Name, m.Machine_Name')
-                        ->from('Job_Production_Log jpl')
-                        ->join('Employees e', 'e.Employee_ID = jpl.Operator_ID', 'left')
-                        ->join('Machines m',  'm.Machine_ID  = jpl.Machine_ID',  'left')
+                        ->from('job_production_log jpl')
+                        ->join('employees e', 'e.Employee_ID = jpl.Operator_ID', 'left')
+                        ->join('machines m',  'm.Machine_ID  = jpl.Machine_ID',  'left')
                         ->where('jpl.Job_ID', $id)
                         ->order_by('jpl.Entry_Time DESC')
                         ->get()->result_array();

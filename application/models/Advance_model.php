@@ -6,10 +6,10 @@ class Advance_model extends CI_Model {
     public function get_all($status = null, $employee_id = null) {
         $this->db->select('a.*, e.Name AS Employee_Name, e.Mobile,
                             ap.Name AS Approved_By_Name, pp.Name AS Paid_By_Name')
-                 ->from('Employee_Advances a')
-                 ->join('Employees e',  'e.Employee_ID  = a.Employee_ID',  'left')
-                 ->join('Employees ap', 'ap.Employee_ID = a.Approved_By',  'left')
-                 ->join('Employees pp', 'pp.Employee_ID = a.Paid_By',      'left');
+                 ->from('employee_advances a')
+                 ->join('employees e',  'e.Employee_ID  = a.Employee_ID',  'left')
+                 ->join('employees ap', 'ap.Employee_ID = a.Approved_By',  'left')
+                 ->join('employees pp', 'pp.Employee_ID = a.Paid_By',      'left');
         if ($status)      $this->db->where('a.Status', $status);
         if ($employee_id) $this->db->where('a.Employee_ID', $employee_id);
         return $this->db->order_by('a.Request_Date DESC')->get()->result_array();
@@ -17,8 +17,8 @@ class Advance_model extends CI_Model {
 
     public function get_by_id($id) {
         return $this->db->select('a.*, e.Name AS Employee_Name, e.Mobile')
-                        ->from('Employee_Advances a')
-                        ->join('Employees e', 'e.Employee_ID = a.Employee_ID', 'left')
+                        ->from('employee_advances a')
+                        ->join('employees e', 'e.Employee_ID = a.Employee_ID', 'left')
                         ->where('a.Advance_ID', $id)
                         ->get()->row_array();
     }

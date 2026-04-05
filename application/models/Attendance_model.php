@@ -5,9 +5,9 @@ class Attendance_model extends CI_Model {
 
     public function get_list($date = null, $employee_id = null) {
         $this->db->select('ea.*, e.Name AS Employee_Name, e.Role, s.Shift_Name')
-                 ->from('Employee_Attendance ea')
-                 ->join('Employees e', 'e.Employee_ID = ea.Employee_ID', 'left')
-                 ->join('Shifts s',    's.Shift_ID    = ea.Shift_ID',    'left');
+                 ->from('employee_attendance ea')
+                 ->join('employees e', 'e.Employee_ID = ea.Employee_ID', 'left')
+                 ->join('shifts s',    's.Shift_ID    = ea.Shift_ID',    'left');
         if ($date)        $this->db->where('ea.Att_Date', $date);
         if ($employee_id) $this->db->where('ea.Employee_ID', $employee_id);
         return $this->db->order_by('ea.Att_Date DESC, e.Name ASC')->get()->result_array();

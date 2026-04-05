@@ -12,12 +12,12 @@ class Conversion_model extends CI_Model {
             e.Name AS Operator_Name,
             cr.Name AS Created_By_Name
         ')
-        ->from('Conversion_Register c')
-        ->join('Item_Master im_in',  'im_in.Item_ID  = c.Input_Item_ID',  'left')
-        ->join('Item_Master im_out', 'im_out.Item_ID = c.Output_Item_ID', 'left')
-        ->join('Machines m',         'm.Machine_ID   = c.Machine_ID',     'left')
-        ->join('Employees e',        'e.Employee_ID  = c.Operator_ID',    'left')
-        ->join('Employees cr',       'cr.Employee_ID = c.Created_By',     'left');
+        ->from('conversion_register c')
+        ->join('item_master im_in',  'im_in.Item_ID  = c.Input_Item_ID',  'left')
+        ->join('item_master im_out', 'im_out.Item_ID = c.Output_Item_ID', 'left')
+        ->join('machines m',         'm.Machine_ID   = c.Machine_ID',     'left')
+        ->join('employees e',        'e.Employee_ID  = c.Operator_ID',    'left')
+        ->join('employees cr',       'cr.Employee_ID = c.Created_By',     'left');
 
         if (!empty($filters['status']))    $this->db->where('c.Status', $filters['status']);
         if (!empty($filters['from']))      $this->db->where('c.Conversion_Date >=', $filters['from']);
@@ -38,11 +38,11 @@ class Conversion_model extends CI_Model {
             m.Machine_Name,
             e.Name AS Operator_Name
         ')
-        ->from('Conversion_Register c')
-        ->join('Item_Master im_in',  'im_in.Item_ID  = c.Input_Item_ID',  'left')
-        ->join('Item_Master im_out', 'im_out.Item_ID = c.Output_Item_ID', 'left')
-        ->join('Machines m',         'm.Machine_ID   = c.Machine_ID',     'left')
-        ->join('Employees e',        'e.Employee_ID  = c.Operator_ID',    'left')
+        ->from('conversion_register c')
+        ->join('item_master im_in',  'im_in.Item_ID  = c.Input_Item_ID',  'left')
+        ->join('item_master im_out', 'im_out.Item_ID = c.Output_Item_ID', 'left')
+        ->join('machines m',         'm.Machine_ID   = c.Machine_ID',     'left')
+        ->join('employees e',        'e.Employee_ID  = c.Operator_ID',    'left')
         ->where('c.Conversion_ID', $id)
         ->get()->row_array();
     }
@@ -78,13 +78,13 @@ class Conversion_model extends CI_Model {
     private function _apply_stock($data) {
         if (!empty($data['Input_Item_ID'])) {
             $this->db->query(
-                "UPDATE Item_Master SET Current_Stock = GREATEST(0, Current_Stock - ?) WHERE Item_ID = ?",
+                "UPDATE item_master SET Current_Stock = GREATEST(0, Current_Stock - ?) WHERE Item_ID = ?",
                 [floatval($data['Input_Qty'] ?? 0), $data['Input_Item_ID']]
             );
         }
         if (!empty($data['Output_Item_ID'])) {
             $this->db->query(
-                "UPDATE Item_Master SET Current_Stock = Current_Stock + ? WHERE Item_ID = ?",
+                "UPDATE item_master SET Current_Stock = Current_Stock + ? WHERE Item_ID = ?",
                 [floatval($data['Output_Qty'] ?? 0), $data['Output_Item_ID']]
             );
         }
@@ -93,13 +93,13 @@ class Conversion_model extends CI_Model {
     private function _reverse_stock($data) {
         if (!empty($data['Input_Item_ID'])) {
             $this->db->query(
-                "UPDATE Item_Master SET Current_Stock = Current_Stock + ? WHERE Item_ID = ?",
+                "UPDATE item_master SET Current_Stock = Current_Stock + ? WHERE Item_ID = ?",
                 [floatval($data['Input_Qty'] ?? 0), $data['Input_Item_ID']]
             );
         }
         if (!empty($data['Output_Item_ID'])) {
             $this->db->query(
-                "UPDATE Item_Master SET Current_Stock = GREATEST(0, Current_Stock - ?) WHERE Item_ID = ?",
+                "UPDATE item_master SET Current_Stock = GREATEST(0, Current_Stock - ?) WHERE Item_ID = ?",
                 [floatval($data['Output_Qty'] ?? 0), $data['Output_Item_ID']]
             );
         }

@@ -13,7 +13,7 @@ if (($_GET['key'] ?? '') !== 'erp_migrate_v5_2025') {
 }
 
 // DB Config — matches your CI3 database.php
-$host = '82.25.106.27';
+$host = 'localhost';
 $user = 'u153068796_easyshop_erp';
 $pass = 'Mci8y@257';
 $db   = 'u153068796_easyshop_erp';

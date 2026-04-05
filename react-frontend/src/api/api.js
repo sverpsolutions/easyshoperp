@@ -11,7 +11,8 @@ api.interceptors.response.use(
   res => res,
   err => {
     if (err.response?.status === 401 && !err.config?._skipAuthRedirect) {
-      window.location.href = '/login'
+      const isPortal = window.location.pathname.startsWith('/portal')
+      window.location.href = isPortal ? '/portal/login' : '/login'
     }
     return Promise.reject(err)
   }
@@ -245,6 +246,22 @@ export const servicesAPI = {
   store:      (data)     => api.post('/services/store', data),
   update:     (id, data) => api.post(`/services/update/${id}`, data),
   openCount:  ()         => api.get('/services/open-count'),
+}
+
+// ── Customer Portal ───────────────────────────────────────────
+export const portalAPI = {
+  login:         (data)      => api.post('/portal/login', data),
+  logout:        ()          => api.post('/portal/logout'),
+  me:            ()          => api.get('/portal/me', { _skipAuthRedirect: true }),
+  dashboard:     ()          => api.get('/portal/dashboard'),
+  orders:        ()          => api.get('/portal/orders'),
+  orderGet:      (id)        => api.get(`/portal/orders/${id}`),
+  orderStore:    (data)      => api.post('/portal/orders/store', data),
+  jobs:          ()          => api.get('/portal/jobs'),
+  bills:         ()          => api.get('/portal/bills'),
+  // Owner admin
+  adminOrders:   (params)    => api.get('/portal/admin/orders', { params }),
+  adminReview:   (id, data)  => api.post(`/portal/admin/orders/review/${id}`, data),
 }
 
 // ── File Upload ───────────────────────────────────────────────

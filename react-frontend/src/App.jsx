@@ -21,6 +21,9 @@ import SuppliersPage   from './pages/owner/Suppliers'
 import PurchasePage    from './pages/owner/Purchase'
 import ConversionPage  from './pages/owner/Conversion'
 import OperatorDashboard from './pages/operator/Dashboard'
+import CustomerLogin     from './pages/customer/Login'
+import CustomerPortal    from './pages/customer/Portal'
+import PortalOrders      from './pages/owner/PortalOrders'
 
 // ── Master Pages ──────────────────────────────────────────────
 import CompanyMaster      from './pages/owner/master/CompanyMaster'
@@ -79,7 +82,8 @@ function AppRoutes() {
         <Route path="suppliers"  element={<PrivateRoute roles={OA}><SuppliersPage /></PrivateRoute>} />
         <Route path="purchase"   element={<PrivateRoute roles={OA}><PurchasePage /></PrivateRoute>} />
         <Route path="conversion" element={<PrivateRoute roles={OA}><ConversionPage /></PrivateRoute>} />
-        <Route path="settings"   element={<PrivateRoute roles={OA}><SettingsPage /></PrivateRoute>} />
+        <Route path="settings"      element={<PrivateRoute roles={OA}><SettingsPage /></PrivateRoute>} />
+        <Route path="portal-orders" element={<PrivateRoute roles={OA}><PortalOrders /></PrivateRoute>} />
 
         {/* ── Masters ── */}
         <Route path="master/company"       element={<PrivateRoute roles={OA}><CompanyMaster /></PrivateRoute>} />
@@ -100,6 +104,11 @@ function AppRoutes() {
         {/* ── Operator ── */}
         <Route path="operator" element={<PrivateRoute><OperatorDashboard /></PrivateRoute>} />
       </Route>
+
+      {/* ── Customer Portal (standalone, no auth wrapper) ── */}
+      <Route path="/portal/login"     element={<CustomerLogin />} />
+      <Route path="/portal/dashboard" element={<CustomerPortal />} />
+      <Route path="/portal"           element={<Navigate to="/portal/login" replace />} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

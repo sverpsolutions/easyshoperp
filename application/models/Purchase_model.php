@@ -5,8 +5,8 @@ class Purchase_model extends CI_Model {
 
     public function get_all($filters = []) {
         $this->db->select('p.*, e.Name AS Created_By_Name')
-                 ->from('Purchase_Register p')
-                 ->join('Employees e', 'e.Employee_ID = p.Created_By', 'left');
+                 ->from('purchase_register p')
+                 ->join('employees e', 'e.Employee_ID = p.Created_By', 'left');
         if (!empty($filters['supplier']))       $this->db->like('p.Supplier_Name', $filters['supplier']);
         if (!empty($filters['payment_status'])) $this->db->where('p.Payment_Status', $filters['payment_status']);
         if (!empty($filters['from']))           $this->db->where('p.Purchase_Date >=', $filters['from']);
@@ -16,8 +16,8 @@ class Purchase_model extends CI_Model {
 
     public function get_by_id($id) {
         $p = $this->db->select('p.*, e.Name AS Created_By_Name')
-                      ->from('Purchase_Register p')
-                      ->join('Employees e', 'e.Employee_ID = p.Created_By', 'left')
+                      ->from('purchase_register p')
+                      ->join('employees e', 'e.Employee_ID = p.Created_By', 'left')
                       ->where('p.Purchase_ID', $id)
                       ->get()->row_array();
         if ($p) {
@@ -39,7 +39,7 @@ class Purchase_model extends CI_Model {
             if (!empty($item['Item_ID'])) {
                 $qty = floatval($item['Qty'] ?? 0);
                 $this->db->query(
-                    "UPDATE Item_Master SET Current_Stock = Current_Stock + ? WHERE Item_ID = ?",
+                    "UPDATE item_master SET Current_Stock = Current_Stock + ? WHERE Item_ID = ?",
                     [$qty, $item['Item_ID']]
                 );
             }
@@ -57,7 +57,7 @@ class Purchase_model extends CI_Model {
         foreach ($old_items as $oi) {
             if (!empty($oi['Item_ID'])) {
                 $this->db->query(
-                    "UPDATE Item_Master SET Current_Stock = Current_Stock - ? WHERE Item_ID = ?",
+                    "UPDATE item_master SET Current_Stock = Current_Stock - ? WHERE Item_ID = ?",
                     [floatval($oi['Qty']), $oi['Item_ID']]
                 );
             }
@@ -72,7 +72,7 @@ class Purchase_model extends CI_Model {
                 $this->db->insert('purchase_items', $item);
                 if (!empty($item['Item_ID'])) {
                     $this->db->query(
-                        "UPDATE Item_Master SET Current_Stock = Current_Stock + ? WHERE Item_ID = ?",
+                        "UPDATE item_master SET Current_Stock = Current_Stock + ? WHERE Item_ID = ?",
                         [floatval($item['Qty'] ?? 0), $item['Item_ID']]
                     );
                 }
@@ -88,7 +88,7 @@ class Purchase_model extends CI_Model {
         foreach ($items as $item) {
             if (!empty($item['Item_ID'])) {
                 $this->db->query(
-                    "UPDATE Item_Master SET Current_Stock = GREATEST(0, Current_Stock - ?) WHERE Item_ID = ?",
+                    "UPDATE item_master SET Current_Stock = GREATEST(0, Current_Stock - ?) WHERE Item_ID = ?",
                     [floatval($item['Qty']), $item['Item_ID']]
                 );
             }

@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash('/c/Program Files/PuTTY/pscp.exe' -r -P 65002 -pw 'Vivekmci8yo@12#' application config middleware routes scripts system utils views public uploads app.js index.php package.json package-lock.json config_database_mysql.js u153068796@srv662-files.hstgr.io:public_html/domain/easyshoperp.sverpsolutions.com/public_html/)"
+    ]
+  }
+}

@@ -12,7 +12,7 @@ class Serial_model extends CI_Model {
             im.Item_Name, im.Item_Code, im.Warranty_Months, im.AMC_Years,
             cm.Customer_Name, cm.Mobile AS Customer_Mobile
         ')
-        ->from('machine_serial_master msm')
+        ->from('Machine_Serial_Master msm')
         ->join('item_master im',       'im.Item_ID = msm.Item_ID',         'left')
         ->join('customer_master cm',   'cm.Customer_ID = msm.Customer_ID', 'left');
 
@@ -33,7 +33,7 @@ class Serial_model extends CI_Model {
 
     public function get_by_id($id) {
         return $this->db->select('msm.*, im.Item_Name, im.Item_Code, im.Warranty_Months, im.AMC_Years, cm.Customer_Name')
-                        ->from('machine_serial_master msm')
+                        ->from('Machine_Serial_Master msm')
                         ->join('item_master im',     'im.Item_ID = msm.Item_ID',         'left')
                         ->join('customer_master cm', 'cm.Customer_ID = msm.Customer_ID', 'left')
                         ->where('msm.Serial_ID', $id)
@@ -41,14 +41,14 @@ class Serial_model extends CI_Model {
     }
 
     public function get_by_serial($serial_no) {
-        return $this->db->where('Serial_No', $serial_no)->get('machine_serial_master')->row_array();
+        return $this->db->where('Serial_No', $serial_no)->get('Machine_Serial_Master')->row_array();
     }
 
     public function get_available($item_id) {
         return $this->db->where('Item_ID', $item_id)
                         ->where('Status', 'In Stock')
                         ->order_by('Serial_No')
-                        ->get('machine_serial_master')->result_array();
+                        ->get('Machine_Serial_Master')->result_array();
     }
 
     public function create($data) {
@@ -56,7 +56,7 @@ class Serial_model extends CI_Model {
         $existing = $this->get_by_serial($data['Serial_No']);
         if ($existing) return false;
 
-        $this->db->insert('machine_serial_master', $data);
+        $this->db->insert('Machine_Serial_Master', $data);
         return $this->db->insert_id();
     }
 
@@ -69,14 +69,14 @@ class Serial_model extends CI_Model {
                 $duplicates[] = $rec['Serial_No'];
                 continue;
             }
-            $this->db->insert('machine_serial_master', $rec);
+            $this->db->insert('Machine_Serial_Master', $rec);
             $inserted++;
         }
         return ['inserted' => $inserted, 'duplicates' => $duplicates];
     }
 
     public function update($id, $data) {
-        $this->db->where('Serial_ID', $id)->update('machine_serial_master', $data);
+        $this->db->where('Serial_ID', $id)->update('Machine_Serial_Master', $data);
         return $this->db->affected_rows();
     }
 
@@ -100,12 +100,12 @@ class Serial_model extends CI_Model {
             $update['AMC_Expiry'] = date('Y-m-d', strtotime("+{$data['AMC_Years']} years"));
         }
 
-        $this->db->where('Serial_ID', $id)->update('machine_serial_master', $update);
+        $this->db->where('Serial_ID', $id)->update('Machine_Serial_Master', $update);
         return $this->db->affected_rows();
     }
 
     public function mark_in_service($id) {
-        $this->db->where('Serial_ID', $id)->update('machine_serial_master', [
+        $this->db->where('Serial_ID', $id)->update('Machine_Serial_Master', [
             'Status'       => 'Service',
             'Updated_Date' => date('Y-m-d H:i:s'),
         ]);
@@ -116,14 +116,14 @@ class Serial_model extends CI_Model {
         // Only allow delete if In Stock
         $serial = $this->get_by_id($id);
         if (!$serial || $serial['Status'] !== 'In Stock') return false;
-        $this->db->where('Serial_ID', $id)->delete('machine_serial_master');
+        $this->db->where('Serial_ID', $id)->delete('Machine_Serial_Master');
         return true;
     }
 
     // Stats for dashboard
     public function get_stats($item_id = null) {
         $base = $item_id ? $this->db->where('Item_ID', $item_id) : $this->db;
-        $all = $base->get('machine_serial_master')->result_array();
+        $all = $base->get('Machine_Serial_Master')->result_array();
         $stats = ['total' => 0, 'in_stock' => 0, 'sold' => 0, 'service' => 0, 'damaged' => 0];
         foreach ($all as $row) {
             $stats['total']++;

@@ -13,8 +13,8 @@ class Service_model extends CI_Model {
             im.Item_Name, im.Item_Code,
             cm.Customer_Name, cm.Mobile AS Customer_Mobile
         ')
-        ->from('service_records sr')
-        ->join('machine_serial_master msm', 'msm.Serial_ID = sr.Serial_ID',    'left')
+        ->from('Service_Records sr')
+        ->join('Machine_Serial_Master msm', 'msm.Serial_ID = sr.Serial_ID',    'left')
         ->join('item_master im',            'im.Item_ID = msm.Item_ID',        'left')
         ->join('customer_master cm',        'cm.Customer_ID = sr.Customer_ID', 'left');
 
@@ -36,8 +36,8 @@ class Service_model extends CI_Model {
 
     public function get_by_id($id) {
         return $this->db->select('sr.*, msm.Serial_No, msm.Warranty_Expiry, msm.AMC_Expiry, im.Item_Name, im.Item_Code, cm.Customer_Name, cm.Mobile AS Customer_Mobile')
-                        ->from('service_records sr')
-                        ->join('machine_serial_master msm', 'msm.Serial_ID = sr.Serial_ID',    'left')
+                        ->from('Service_Records sr')
+                        ->join('Machine_Serial_Master msm', 'msm.Serial_ID = sr.Serial_ID',    'left')
                         ->join('item_master im',            'im.Item_ID = msm.Item_ID',        'left')
                         ->join('customer_master cm',        'cm.Customer_ID = sr.Customer_ID', 'left')
                         ->where('sr.Service_ID', $id)
@@ -54,7 +54,7 @@ class Service_model extends CI_Model {
         }
 
         $data['Created_Date'] = date('Y-m-d H:i:s');
-        $this->db->insert('service_records', $data);
+        $this->db->insert('Service_Records', $data);
         $id = $this->db->insert_id();
 
         // Mark serial as In Service
@@ -76,22 +76,22 @@ class Service_model extends CI_Model {
             if ($svc) {
                 $this->db->where('Serial_ID', $svc['Serial_ID'])
                          ->where('Status', 'Service')
-                         ->update('machine_serial_master', ['Status' => 'Sold', 'Updated_Date' => date('Y-m-d H:i:s')]);
+                         ->update('Machine_Serial_Master', ['Status' => 'Sold', 'Updated_Date' => date('Y-m-d H:i:s')]);
             }
         }
 
-        $this->db->where('Service_ID', $id)->update('service_records', $data);
+        $this->db->where('Service_ID', $id)->update('Service_Records', $data);
         return $this->db->affected_rows();
     }
 
     public function get_history($serial_id) {
         return $this->db->where('Serial_ID', $serial_id)
                         ->order_by('Created_Date', 'DESC')
-                        ->get('service_records')->result_array();
+                        ->get('Service_Records')->result_array();
     }
 
     public function get_open_count() {
         return $this->db->where_in('Status', ['Open', 'In Progress', 'Waiting Parts'])
-                        ->count_all_results('service_records');
+                        ->count_all_results('Service_Records');
     }
 }

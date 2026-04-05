@@ -27,13 +27,13 @@ class Dashboard extends MY_Controller {
         try {
             $job_requests = $this->db->select('r.Request_ID, e.Name AS Employee_Name, e.Mobile,
                 m.Machine_Name, r.Description, r.Request_Date')
-                ->from('Job_Requests r')
-                ->join('Employees e', 'e.Employee_ID = r.Employee_ID', 'left')
-                ->join('Machines m',  'm.Machine_ID  = r.Machine_ID',  'left')
+                ->from('job_requests r')
+                ->join('employees e', 'e.Employee_ID = r.Employee_ID', 'left')
+                ->join('machines m',  'm.Machine_ID  = r.Machine_ID',  'left')
                 ->where('r.Status', 'Pending')
                 ->order_by('r.Request_Date ASC')
                 ->get()->result_array();
-        } catch (Exception $e) { /* table may not exist */ }
+        } catch (\Throwable $e) { /* table may not exist */ }
 
         return $this->json_success([
             'machines'          => $machines,

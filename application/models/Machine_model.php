@@ -18,9 +18,9 @@ class Machine_model extends CI_Model {
                  THEN ROUND(IFNULL(j.Produced_Qty,0)*100.0/j.Required_Qty,1)
                  ELSE 0 END AS Job_Progress
         ')
-        ->from('Machines m')
-        ->join('Employees e', 'e.Employee_ID = m.Current_Operator_ID', 'left')
-        ->join('Jobs j',      'j.Job_ID = m.Current_Job_ID', 'left')
+        ->from('machines m')
+        ->join('employees e', 'e.Employee_ID = m.Current_Operator_ID', 'left')
+        ->join('jobs j',      'j.Job_ID = m.Current_Job_ID', 'left')
         ->order_by('m.Machine_ID')
         ->get()->result_array();
     }
@@ -38,9 +38,9 @@ class Machine_model extends CI_Model {
             IFNULL(j.Required_Qty,0) AS Required_Qty,
             IFNULL(j.Produced_Qty,0) AS Produced_Qty
         ')
-        ->from('Machines m')
-        ->join('Employees e', 'e.Employee_ID = m.Current_Operator_ID', 'left')
-        ->join('Jobs j',      'j.Job_ID = m.Current_Job_ID', 'left')
+        ->from('machines m')
+        ->join('employees e', 'e.Employee_ID = m.Current_Operator_ID', 'left')
+        ->join('jobs j',      'j.Job_ID = m.Current_Job_ID', 'left')
         ->where('m.Machine_ID', $id)
         ->get()->row_array();
     }

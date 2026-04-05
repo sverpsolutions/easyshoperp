@@ -22,9 +22,9 @@ class Machines extends MY_Controller {
 
         // Recent machine log
         $log = $this->db->select('ml.*, e.Name AS Operator_Name, j.Job_Number')
-                        ->from('Machine_Log ml')
-                        ->join('Employees e', 'e.Employee_ID = ml.Operator_ID', 'left')
-                        ->join('Jobs j',      'j.Job_ID      = ml.Job_ID',      'left')
+                        ->from('machine_log ml')
+                        ->join('employees e', 'e.Employee_ID = ml.Operator_ID', 'left')
+                        ->join('jobs j',      'j.Job_ID      = ml.Job_ID',      'left')
                         ->where('ml.Machine_ID', $id)
                         ->order_by('ml.Start_Time DESC')
                         ->limit(20)->get()->result_array();

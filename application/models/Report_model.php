@@ -13,10 +13,10 @@ class Report_model extends CI_Model {
                 IFNULL(j.Packing,'—') AS Packing,
                 m.Machine_Name, e.Name AS Operator_Name,
                 SUM(jpl.Qty_Produced) AS Total_Qty
-            FROM Job_Production_Log jpl
-            JOIN Jobs      j ON j.Job_ID      = jpl.Job_ID
-            JOIN Machines  m ON m.Machine_ID  = jpl.Machine_ID
-            JOIN Employees e ON e.Employee_ID = jpl.Operator_ID
+            FROM job_production_log jpl
+            JOIN jobs      j ON j.Job_ID      = jpl.Job_ID
+            JOIN machines  m ON m.Machine_ID  = jpl.Machine_ID
+            JOIN employees e ON e.Employee_ID = jpl.Operator_ID
             WHERE DATE(jpl.Entry_Time) BETWEEN ? AND ?
             GROUP BY DATE(jpl.Entry_Time), j.Job_Number, j.Customer_Name,
                      j.Size, j.Label_Type, j.UPS, j.Gap_Type, j.Paper, j.Core, j.Packing,
@@ -32,9 +32,9 @@ class Report_model extends CI_Model {
                 COUNT(DISTINCT jpl.Job_ID) AS Total_Jobs,
                 SUM(jpl.Qty_Produced) AS Total_Qty,
                 SUM(TIMESTAMPDIFF(MINUTE, ml.Start_Time, IFNULL(ml.End_Time, NOW()))) AS Total_Minutes
-            FROM Job_Production_Log jpl
-            JOIN Employees e ON e.Employee_ID = jpl.Operator_ID
-            LEFT JOIN Machine_Log ml ON ml.Operator_ID = jpl.Operator_ID
+            FROM job_production_log jpl
+            JOIN employees e ON e.Employee_ID = jpl.Operator_ID
+            LEFT JOIN machine_log ml ON ml.Operator_ID = jpl.Operator_ID
                 AND ml.Job_ID = jpl.Job_ID AND ml.End_Time IS NOT NULL
             WHERE DATE(jpl.Entry_Time) BETWEEN ? AND ?
             GROUP BY e.Employee_ID, e.Name
@@ -49,8 +49,8 @@ class Report_model extends CI_Model {
                 COUNT(DISTINCT ml.Job_ID) AS Total_Jobs,
                 SUM(IFNULL(ml.Total_Run_Minutes,0)) AS Total_Minutes,
                 SUM(jpl.Qty_Produced) AS Total_Qty
-            FROM Machines m
-            LEFT JOIN Machine_Log ml ON ml.Machine_ID = m.Machine_ID
+            FROM machines m
+            LEFT JOIN machine_log ml ON ml.Machine_ID = m.Machine_ID
                 AND DATE(ml.Start_Time) BETWEEN ? AND ?
             LEFT JOIN Job_Production_Log jpl ON jpl.Machine_ID = m.Machine_ID
                 AND DATE(jpl.Entry_Time) BETWEEN ? AND ?
@@ -67,7 +67,7 @@ class Report_model extends CI_Model {
                 SUM(j.Required_Qty) AS Total_Required,
                 SUM(j.Produced_Qty) AS Total_Produced,
                 SUM(CASE WHEN j.Status='Completed' THEN 1 ELSE 0 END) AS Completed
-            FROM Jobs j
+            FROM jobs j
             WHERE j.Order_Date BETWEEN ? AND ?
             GROUP BY j.Customer_Name
             ORDER BY Total_Jobs DESC
@@ -81,9 +81,9 @@ class Report_model extends CI_Model {
             m.Machine_Name, e.Name AS Operator_Name,
             CASE WHEN j.Required_Qty > 0 THEN ROUND(j.Produced_Qty*100/j.Required_Qty,1) ELSE 0 END AS Progress_Pct
         ')
-        ->from('Jobs j')
-        ->join('Machines m',  'm.Machine_ID  = j.Assigned_Machine_ID',  'left')
-        ->join('Employees e', 'e.Employee_ID = j.Assigned_Operator_ID', 'left')
+        ->from('jobs j')
+        ->join('machines m',  'm.Machine_ID  = j.Assigned_Machine_ID',  'left')
+        ->join('employees e', 'e.Employee_ID = j.Assigned_Operator_ID', 'left')
         ->where_in('j.Status', ['Pending','Assigned','Running'])
         ->order_by('j.Priority ASC, j.Order_Date ASC')
         ->get()->result_array();
@@ -96,9 +96,9 @@ class Report_model extends CI_Model {
             m.Machine_Name, e.Name AS Operator_Name,
             DATEDIFF(CURDATE(), j.Delivery_Date) AS Days_Overdue
         ')
-        ->from('Jobs j')
-        ->join('Machines m',  'm.Machine_ID  = j.Assigned_Machine_ID',  'left')
-        ->join('Employees e', 'e.Employee_ID = j.Assigned_Operator_ID', 'left')
+        ->from('jobs j')
+        ->join('machines m',  'm.Machine_ID  = j.Assigned_Machine_ID',  'left')
+        ->join('employees e', 'e.Employee_ID = j.Assigned_Operator_ID', 'left')
         ->where_in('j.Status', ['Pending','Assigned','Running'])
         ->where('j.Delivery_Date <', date('Y-m-d'))
         ->order_by('j.Delivery_Date ASC')
@@ -111,10 +111,10 @@ class Report_model extends CI_Model {
             e.Name AS Operator_Name, j.Job_Number,
             hi.Impressions_Count, hi.Remarks
         ')
-        ->from('Hourly_Impressions hi')
-        ->join('Machines m',  'm.Machine_ID  = hi.Machine_ID',  'left')
-        ->join('Employees e', 'e.Employee_ID = hi.Operator_ID', 'left')
-        ->join('Jobs j',      'j.Job_ID      = hi.Job_ID',      'left')
+        ->from('hourly_impressions hi')
+        ->join('machines m',  'm.Machine_ID  = hi.Machine_ID',  'left')
+        ->join('employees e', 'e.Employee_ID = hi.Operator_ID', 'left')
+        ->join('jobs j',      'j.Job_ID      = hi.Job_ID',      'left')
         ->where('hi.Log_Date >=', $from)
         ->where('hi.Log_Date <=', $to);
         if ($machine_id) $this->db->where('hi.Machine_ID', $machine_id);
